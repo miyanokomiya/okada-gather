@@ -12,7 +12,8 @@ import WebGL exposing (Mesh, Shader)
 
 
 type alias Model =
-    Float
+    { camela : Block.Geo
+    }
 
 
 type Msg
@@ -31,14 +32,20 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( 0, Cmd.none )
+    ( { camela = ( vec3 0 0 10, ( 0, vec3 0 1 0 ) ) }, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        ( cp, ( crad, caxis ) ) =
+            model.camela
+    in
     case msg of
         Delta dt ->
-            ( model + dt / 5000, Cmd.none )
+            ( { model | camela = ( cp, ( crad + dt / 5000, caxis ) ) }
+            , Cmd.none
+            )
 
 
 subscriptions : Model -> Sub Msg
@@ -50,6 +57,10 @@ subscriptions model =
 
 view : Model -> Browser.Document Msg
 view model =
+    let
+        ( cp, ( crad, caxis ) ) =
+            model.camela
+    in
     { title = "岡田集め - リメイク"
     , body =
         [ WebGL.toHtml
@@ -64,16 +75,16 @@ view model =
                         vertexShader
                         fragmentShader
                         mesh
-                        (uniforms ( vec3 0 -1 10, ( model, vec3 0 1 0 ) ) geo)
+                        (uniforms model.camela geo)
                 )
-                [ ( Block.meshOka, ( vec3 0 0 0, ( model, vec3 1 0 0 ) ) )
-                , ( Block.meshDa, ( vec3 1.1 0 0, ( model, vec3 1 0 0 ) ) )
-                , ( Block.meshOka, ( vec3 2.2 0 0, ( model, vec3 1 0 0 ) ) )
-                , ( Block.meshDa, ( vec3 3.3 0 0, ( model, vec3 1 0 0 ) ) )
-                , ( Block.meshDa, ( vec3 0 1 1.1, ( model, vec3 0 1 0 ) ) )
-                , ( Block.meshOka, ( vec3 1.1 1.1 0, ( model, vec3 0 1 0 ) ) )
-                , ( Block.meshDa, ( vec3 2.2 1.1 0, ( model, vec3 0 1 0 ) ) )
-                , ( Block.meshOka, ( vec3 3.3 1.1 0, ( model, vec3 0 1 0 ) ) )
+                [ ( Block.meshOka, ( vec3 0 0 0, ( crad, vec3 1 0 0 ) ) )
+                , ( Block.meshDa, ( vec3 1.1 0 0, ( crad, vec3 1 0 0 ) ) )
+                , ( Block.meshOka, ( vec3 2.2 0 0, ( crad, vec3 1 0 0 ) ) )
+                , ( Block.meshDa, ( vec3 3.3 0 0, ( crad, vec3 1 0 0 ) ) )
+                , ( Block.meshDa, ( vec3 0 1 1.1, ( crad, vec3 0 1 0 ) ) )
+                , ( Block.meshOka, ( vec3 1.1 1.1 0, ( crad, vec3 0 1 0 ) ) )
+                , ( Block.meshDa, ( vec3 2.2 1.1 0, ( crad, vec3 0 1 0 ) ) )
+                , ( Block.meshOka, ( vec3 3.3 1.1 0, ( crad, vec3 0 1 0 ) ) )
                 ]
             )
         ]
