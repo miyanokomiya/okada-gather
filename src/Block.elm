@@ -1,4 +1,4 @@
-module Block exposing (Vertex, Geo, mesh, meshListDa, meshListOka)
+module Block exposing (Geo, Vertex, mesh, meshDa, meshOka)
 
 import Array
 import Asset
@@ -24,42 +24,37 @@ type alias Geo =
 convert : Geo -> Vec3 -> Vec3
 convert ( position, ( radian, axis ) ) vec =
     vec
-        -- |> Mat4.transform (Mat4.rotate radian axis Mat4.identity)
-        -- |> add position
 
 
-convertTriangle : Geo -> List Triangle -> List Triangle
-convertTriangle geo list =
-    List.map
-        (\( a, b, c ) -> ( convert geo a, convert geo b, convert geo c ))
-        list
+
+-- |> Mat4.transform (Mat4.rotate radian axis Mat4.identity)
+-- |> add position
 
 
 type alias Triangle =
     ( Vec3, Vec3, Vec3 )
 
 
-mesh : Geo -> List Triangle -> Mesh Vertex
-mesh geo list =
+mesh : List Triangle -> Mesh Vertex
+mesh list =
     list
-        |> convertTriangle geo
         |> List.map (\tri -> face (vec3 245 121 0) tri)
         |> List.concat
         |> WebGL.triangles
 
 
-meshListOka : Geo -> Mesh Vertex
-meshListOka geo =
+meshOka : Mesh Vertex
+meshOka =
     Asset.oka
         |> List.concat
-        |> mesh geo
+        |> mesh
 
 
-meshListDa : Geo -> Mesh Vertex
-meshListDa geo =
+meshDa : Mesh Vertex
+meshDa =
     Asset.da
         |> List.concat
-        |> mesh geo
+        |> mesh
 
 
 face : Vec3 -> ( Vec3, Vec3, Vec3 ) -> List ( Vertex, Vertex, Vertex )
