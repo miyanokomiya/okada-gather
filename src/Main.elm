@@ -58,35 +58,43 @@ view model =
             , style "display" "block"
             , style "border" "1px solid black"
             ]
-            (entities
-                model
-                (List.concat
-                    [ Block.meshListOka
-                        ( vec3 0 0 0, ( 1, vec3 1 0 0 ) )
-                    , Block.meshListDa
-                        ( vec3 1.1 0 0, ( 1, vec3 1 0 0 ) )
-                    ]
+            [ WebGL.entity
+                vertexShader
+                fragmentShader
+                (Block.meshListOka
+                    ( vec3 0 0 0, ( model, vec3 1 0 0 ) )
                 )
-             -- [ Block.mesh ( vec3 0 0 0, ( 0, vec3 1 0 0 ) )
-             -- , Block.mesh ( vec3 4 0 0, ( 1, vec3 1 0 0 ) )
-             -- , Block.mesh ( vec3 -4 0 0, ( 1, vec3 0 1 0 ) )
-             -- ]
-            )
+                (uniforms model ( vec3 0 0 0, ( model, vec3 1 0 0 ) ))
+            ]
+
+        -- (entities
+        --     model
+        --     [ Block.meshListOka
+        --         ( vec3 0 0 0, ( model, vec3 1 0 0 ) )
+        --     -- , Block.meshListDa
+        --     --     ( vec3 1.1 0 0, ( model, vec3 0 1 0 ) )
+        --     -- , Block.meshListDa
+        --     --     ( vec3 0 1.1 0, ( model, vec3 0 0 1 ) )
+        --     -- , Block.meshListOka
+        --     --     ( vec3 1.1 1.1 0, ( model, vec3 1 1 0 ) )
+        --     ]
+        -- )
         ]
     }
 
 
-entities : Model -> List (Mesh Block.Vertex) -> List WebGL.Entity
-entities model meshes =
-    List.map
-        (\m ->
-            WebGL.entity
-                vertexShader
-                fragmentShader
-                m
-                (uniforms model)
-        )
-        meshes
+
+-- entities : Model -> List (Mesh Block.Vertex) -> List WebGL.Entity
+-- entities model meshes =
+--     List.map
+--         (\m ->
+--             WebGL.entity
+--                 vertexShader
+--                 fragmentShader
+--                 m
+--                 (uniforms model)
+--         )
+--         meshes
 
 
 type alias Uniforms =
@@ -97,12 +105,12 @@ type alias Uniforms =
     }
 
 
-uniforms : Float -> Uniforms
-uniforms theta =
+uniforms : Float -> Block.Geo -> Uniforms
+uniforms theta ( position, ( t, axis ) ) =
     { rotation =
-        Mat4.makeRotate (3 * theta) (vec3 0 1 0)
+        Mat4.makeRotate t axis
     , perspective = Mat4.makePerspective 45 1 0.01 100
-    , camera = Mat4.makeLookAt (vec3 0 0 5) (vec3 0 0 0) (vec3 0 1 0)
+    , camera = Mat4.makeLookAt (Vec3.add (vec3 0 0 10) (Vec3.scale -1 position)) (vec3 0 0 0) (vec3 0 1 0)
     , shade = 0.8
     }
 
