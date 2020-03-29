@@ -60,10 +60,17 @@ view model =
             ]
             (entities
                 model
-                [ Block.mesh ( vec3 0 0 0, ( 0, vec3 1 0 0 ) )
-                , Block.mesh ( vec3 4 0 0, ( 1, vec3 1 0 0 ) )
-                , Block.mesh ( vec3 -4 0 0, ( 1, vec3 0 1 0 ) )
-                ]
+                (List.concat
+                    [ Block.meshListOka
+                        ( vec3 0 0 0, ( 1, vec3 1 0 0 ) )
+                    , Block.meshListDa
+                        ( vec3 1.1 0 0, ( 1, vec3 1 0 0 ) )
+                    ]
+                )
+             -- [ Block.mesh ( vec3 0 0 0, ( 0, vec3 1 0 0 ) )
+             -- , Block.mesh ( vec3 4 0 0, ( 1, vec3 1 0 0 ) )
+             -- , Block.mesh ( vec3 -4 0 0, ( 1, vec3 0 1 0 ) )
+             -- ]
             )
         ]
     }
@@ -95,7 +102,7 @@ uniforms theta =
     { rotation =
         Mat4.makeRotate (3 * theta) (vec3 0 1 0)
     , perspective = Mat4.makePerspective 45 1 0.01 100
-    , camera = Mat4.makeLookAt (vec3 0 0 15) (vec3 0 0 0) (vec3 0 1 0)
+    , camera = Mat4.makeLookAt (vec3 0 0 5) (vec3 0 0 0) (vec3 0 1 0)
     , shade = 0.8
     }
 

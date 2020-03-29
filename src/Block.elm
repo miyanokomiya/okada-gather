@@ -1,6 +1,8 @@
-module Block exposing (Vertex, mesh)
+module Block exposing (Vertex, mesh, meshListDa, meshListOka)
 
-import Math.Matrix4 as Mat4 exposing (Mat4)
+import Array
+import Asset
+import Math.Matrix4 as Mat4
 import Math.Vector3 as Vec3 exposing (Vec3, add, vec3)
 import WebGL exposing (Mesh)
 
@@ -26,50 +28,100 @@ convert ( position, ( radian, axis ) ) vec =
         |> add position
 
 
-mesh : Geo -> Mesh Vertex
-mesh geo =
-    let
-        rft =
-            convert geo (vec3 1 1 1)
+convertTriangle : Geo -> List Triangle -> List Triangle
+convertTriangle geo list =
+    List.map
+        (\( a, b, c ) -> ( convert geo a, convert geo b, convert geo c ))
+        list
 
-        lft =
-            convert geo (vec3 -1 1 1)
 
-        lbt =
-            convert geo (vec3 -1 -1 1)
+type alias Triangle =
+    ( Vec3, Vec3, Vec3 )
 
-        rbt =
-            convert geo (vec3 1 -1 1)
 
-        rbb =
-            convert geo (vec3 1 -1 -1)
-
-        rfb =
-            convert geo (vec3 1 1 -1)
-
-        lfb =
-            convert geo (vec3 -1 1 -1)
-
-        lbb =
-            convert geo (vec3 -1 -1 -1)
-    in
-    [ face (vec3 115 210 22) rft rfb rbb rbt -- green
-    , face (vec3 52 101 164) rft rfb lfb lft -- blue
-    , face (vec3 237 212 0) rft lft lbt rbt -- yellow
-    , face (vec3 204 0 0) rfb lfb lbb rbb -- red
-    , face (vec3 117 80 123) lft lfb lbb lbt -- purple
-    , face (vec3 245 121 0) rbt rbb lbb lbt -- orange
-    ]
+mesh : List Triangle -> Geo -> Mesh Vertex
+mesh list geo =
+    list
+        |> convertTriangle geo
+        |> List.map (\tri -> face (vec3 245 121 0) tri)
         |> List.concat
         |> WebGL.triangles
 
 
-face : Vec3 -> Vec3 -> Vec3 -> Vec3 -> Vec3 -> List ( Vertex, Vertex, Vertex )
-face color a b c d =
+meshListOka : Geo -> List (Mesh Vertex)
+meshListOka geo =
+    Asset.oka
+        |> develop3D
+        |> List.map (\triangles -> mesh triangles geo)
+
+
+meshListDa : Geo -> List (Mesh Vertex)
+meshListDa geo =
+    Asset.da
+        |> develop3D
+        |> List.map (\triangles -> mesh triangles geo)
+
+
+develop3D : List (List Triangle) -> List (List Triangle)
+develop3D org =
+    List.concat
+        [ org
+        , bottom org
+        ]
+
+
+side : List (List Triangle) -> List (List Triangle)
+side list =
+    let
+        adjusted =
+            case List.head list of
+                Just t ->
+                    List.append list [ t ]
+
+                Nothing ->
+                    list
+
+        arr =
+            Array.fromList adjusted
+    in
+    adjusted
+        |> List.indexedMap
+            (\i item ->
+                let
+                    next =
+                        Array.get (i + 1) arr
+                in
+                case next of
+                    Just a ->
+                        [ item ]
+
+                    Nothing ->
+                        [ item ]
+            )
+        |> List.concat
+
+
+bottom : List (List Triangle) -> List (List Triangle)
+bottom list =
+    list
+        |> List.map
+            (\triangles ->
+                List.map
+                    (\( a, b, c ) ->
+                        ( Vec3.sub a (vec3 0 0 0.1)
+                        , Vec3.sub b (vec3 0 0 0.1)
+                        , Vec3.sub c (vec3 0 0 0.1)
+                        )
+                    )
+                    triangles
+            )
+
+
+face : Vec3 -> ( Vec3, Vec3, Vec3 ) -> List ( Vertex, Vertex, Vertex )
+face color ( a, b, c ) =
     let
         vertex position =
             Vertex (Vec3.scale (1 / 255) color) position
     in
     [ ( vertex a, vertex b, vertex c )
-    , ( vertex c, vertex d, vertex a )
     ]
