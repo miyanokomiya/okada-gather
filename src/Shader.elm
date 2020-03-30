@@ -1,6 +1,6 @@
 module Shader exposing
-    ( Camela
-    , Geo
+    ( Geo
+    , OrbitCamela
     , Vertex
     , fragmentShader
     , uniforms
@@ -26,8 +26,10 @@ type alias Geo =
     ( Vec3, Rotation )
 
 
-type alias Camela =
-    Geo
+{-| (radius, radianA, radianB)
+-}
+type alias OrbitCamela =
+    ( Float, Float, Float )
 
 
 type alias Uniforms =
@@ -39,14 +41,24 @@ type alias Uniforms =
     }
 
 
-uniforms : Camela -> Geo -> Uniforms
-uniforms ( cp, ( ct, ca ) ) ( position, ( t, axis ) ) =
+uniforms : OrbitCamela -> Geo -> Uniforms
+uniforms camela ( position, ( t, axis ) ) =
     { rotation = Mat4.makeRotate t axis
     , translation = Mat4.makeTranslate position
     , perspective = Mat4.makePerspective 45 1 0.01 100
-    , camera = Mat4.makeLookAt (Mat4.transform (Mat4.makeRotate ct ca) cp) (vec3 0 0 0) (vec3 0 1 0)
+    , camera = Mat4.makeLookAt (orbitCamelaPosition camela) (vec3 0 0 0) (vec3 0 1 0)
     , shade = 0.8
     }
+
+
+orbitCamelaPosition : OrbitCamela -> Vec3
+orbitCamelaPosition ( cr, ca, cb ) =
+    Mat4.transform
+        (Mat4.mul
+            (Mat4.makeRotate ca (vec3 0 1 0))
+            (Mat4.makeRotate cb (vec3 1 0 0))
+        )
+        (vec3 0 0 cr)
 
 
 

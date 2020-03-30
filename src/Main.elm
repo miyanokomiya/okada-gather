@@ -4,17 +4,16 @@ import Block
 import Browser
 import Browser.Events exposing (onAnimationFrameDelta)
 import Draggable
-import Html exposing (Html)
+import Html
 import Html.Attributes exposing (height, style, width)
-import Json.Decode exposing (Value)
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 import Shader
-import WebGL exposing (Mesh, Shader)
+import WebGL exposing (Mesh)
 
 
 type alias Model =
-    { camela : Shader.Camela
+    { camela : Shader.OrbitCamela
     , position : ( Int, Int )
     , drag : Draggable.State String
     }
@@ -43,7 +42,7 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { camela = ( vec3 0 0 10, ( 0, vec3 0 1 0 ) )
+    ( { camela = ( 10, 0, 0 )
       , position = ( 0, 0 )
       , drag = Draggable.init
       }
@@ -51,27 +50,26 @@ init _ =
     )
 
 
+limitRadian : Float -> Float
+limitRadian r =
+    max (min r (pi / 2 * 0.99)) (-pi / 2 * 0.99)
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        ( cp, ( crad, caxis ) ) =
+        ( cr, ca, cb ) =
             model.camela
     in
     case msg of
         Delta _ ->
-            ( -- { model | camela = ( cp, ( crad + dt / 5000, caxis ) ) }
-              model
+            ( model
             , Cmd.none
             )
 
         OnDragBy ( dx, dy ) ->
-            let
-                ( x, y ) =
-                    model.position
-            in
             ( { model
-                | position = ( round (toFloat x + dx), round (toFloat y + dy) )
-                , camela = ( Vec3.add cp (vec3 0 dy 0), ( crad - dx / 10, caxis ) )
+                | camela = ( cr, ca - dx / 30, limitRadian (cb - dy / 30) )
               }
             , Cmd.none
             )
@@ -95,10 +93,10 @@ view model =
         [ Html.div []
             [ Html.text
                 (let
-                    ( x, y ) =
-                        model.position
+                    ( cr, ca, cb ) =
+                        model.camela
                  in
-                 String.fromInt x ++ ", " ++ String.fromInt y
+                 String.fromFloat ca ++ ", " ++ String.fromFloat cb
                 )
             ]
         , WebGL.toHtml
@@ -125,7 +123,7 @@ view model =
     }
 
 
-entities : Shader.Camela -> List ( Mesh Shader.Vertex, Shader.Geo ) -> List WebGL.Entity
+entities : Shader.OrbitCamela -> List ( Mesh Shader.Vertex, Shader.Geo ) -> List WebGL.Entity
 entities camela list =
     List.map
         (\( mesh, geo ) ->
