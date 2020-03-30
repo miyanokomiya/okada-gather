@@ -18,30 +18,26 @@ convert ( position, ( radian, axis ) ) vec =
 -- |> add position
 
 
-type alias Triangle =
-    ( Vec3, Vec3, Vec3 )
-
-
-mesh : List Triangle -> Mesh Shader.Vertex
-mesh list =
+mesh : Vec3 -> List Shader.Triangle -> Mesh Shader.Vertex
+mesh color list =
     list
-        |> List.map (\tri -> face (vec3 245 121 0) tri)
+        |> List.map (\tri -> face color tri)
         |> List.concat
         |> WebGL.triangles
 
 
-meshOka : Mesh Shader.Vertex
-meshOka =
+meshOka : Vec3 -> Mesh Shader.Vertex
+meshOka color =
     Asset.oka
         |> List.concat
-        |> mesh
+        |> mesh color
 
 
-meshDa : Mesh Shader.Vertex
-meshDa =
+meshDa : Vec3 -> Mesh Shader.Vertex
+meshDa color =
     Asset.da
         |> List.concat
-        |> mesh
+        |> mesh color
 
 
 face : Vec3 -> ( Vec3, Vec3, Vec3 ) -> List ( Shader.Vertex, Shader.Vertex, Shader.Vertex )

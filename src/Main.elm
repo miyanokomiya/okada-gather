@@ -1,21 +1,34 @@
 module Main exposing (main)
 
+import Asset
 import Block
 import Browser
 import Browser.Events exposing (onAnimationFrameDelta)
 import Draggable
 import Html
 import Html.Attributes exposing (height, style, width)
+import Html.Events.Extra.Mouse as Mouse
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 import Shader
 import WebGL exposing (Mesh)
 
 
+type Okada
+    = Oka
+    | Da
+
+
+type alias BlockWithGeo =
+    ( Okada, Shader.Geo )
+
+
 type alias Model =
-    { camela : Shader.OrbitCamela
-    , position : ( Int, Int )
+    { camera : Shader.OrbitCamela
+    , position : ( Float, Float )
     , drag : Draggable.State String
+    , blocks : List BlockWithGeo
+    , selected : Maybe BlockWithGeo
     }
 
 
@@ -23,6 +36,7 @@ type Msg
     = Delta Float
     | OnDragBy Draggable.Delta
     | DragMsg (Draggable.Msg String)
+    | ClickMsg ( Float, Float )
 
 
 dragConfig : Draggable.Config String Msg
@@ -42,12 +56,33 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { camela = ( 10, 0, 0 )
+    ( { camera = ( 10, 0, 0 )
       , position = ( 0, 0 )
       , drag = Draggable.init
+      , blocks =
+            [ ( Oka, ( vec3 0 0 0, ( 0, vec3 1 0 0 ) ) )
+            , ( Da, ( vec3 1.1 0 0, ( 0, vec3 1 0 0 ) ) )
+            , ( Oka, ( vec3 2.2 0 0, ( 0, vec3 1 0 0 ) ) )
+            , ( Da, ( vec3 3.3 0 0, ( 0, vec3 1 0 0 ) ) )
+            , ( Da, ( vec3 0 1 0, ( 0, vec3 0 1 0 ) ) )
+            , ( Oka, ( vec3 1.1 1.1 0, ( 0, vec3 0 1 0 ) ) )
+            , ( Da, ( vec3 2.2 1.1 0, ( 0, vec3 0 1 0 ) ) )
+            , ( Oka, ( vec3 3.3 1.1 1, ( 0, vec3 0 1 0 ) ) )
+            ]
+      , selected = Nothing
       }
     , Cmd.none
     )
+
+
+okadaMesh : Vec3 -> Okada -> Mesh Shader.Vertex
+okadaMesh color okada =
+    case okada of
+        Oka ->
+            Block.meshOka color
+
+        Da ->
+            Block.meshDa color
 
 
 limitRadian : Float -> Float
@@ -59,7 +94,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
         ( cr, ca, cb ) =
-            model.camela
+            model.camera
     in
     case msg of
         Delta _ ->
@@ -69,13 +104,49 @@ update msg model =
 
         OnDragBy ( dx, dy ) ->
             ( { model
-                | camela = ( cr, ca - dx / 30, limitRadian (cb - dy / 30) )
+                | camera = ( cr, ca - dx / 30, limitRadian (cb - dy / 30) )
               }
             , Cmd.none
             )
 
         DragMsg dragMsg ->
             Draggable.update dragConfig dragMsg model
+
+        ClickMsg pos ->
+            ( { model | selected = getClickedBlock model pos, position = pos }, Cmd.none )
+
+
+getClickedBlock : Model -> ( Float, Float ) -> Maybe BlockWithGeo
+getClickedBlock model pos =
+    let
+        origin =
+            Shader.orbitCamelaPosition model.camera
+
+        destination =
+            Shader.getClickPosition model.camera pos
+
+        direction =
+            Vec3.direction destination origin
+    in
+    List.filter
+        (\( _, geo ) ->
+            let
+                ( p, ( rad, axis ) ) =
+                    geo
+
+                mat =
+                    Mat4.mul (Mat4.makeRotate rad axis) (Mat4.makeTranslate p)
+
+                triangleList =
+                    List.map (\( v0, v1, v2 ) -> ( Mat4.transform mat v0, Mat4.transform mat v1, Mat4.transform mat v2 )) (List.concat Asset.cube)
+
+                isClicked =
+                    Shader.isCubeClicked origin direction triangleList
+            in
+            isClicked
+        )
+        model.blocks
+        |> List.head
 
 
 subscriptions : Model -> Sub Msg
@@ -93,44 +164,69 @@ view model =
         [ Html.div []
             [ Html.text
                 (let
-                    ( cr, ca, cb ) =
-                        model.camela
+                    -- ( cr, ca, cb ) =
+                    --     model.camera
+                    ( x, y ) =
+                        model.position
+
+                    selected =
+                        case model.selected of
+                            Just _ ->
+                                "selected"
+
+                            Nothing ->
+                                "none"
                  in
-                 String.fromFloat ca ++ ", " ++ String.fromFloat cb
+                 selected ++ " | " ++ String.fromFloat x ++ ", " ++ String.fromFloat y
                 )
             ]
         , WebGL.toHtml
-            ([ width 600
-             , height 600
+            ([ width 1000
+             , height 1000
              , style "display" "block"
              , style "border" "1px solid black"
              , Draggable.mouseTrigger "my-element" DragMsg
+             , Mouse.onClick (.offsetPos >> ClickMsg)
              ]
                 ++ Draggable.touchTriggers "my-element" DragMsg
             )
-            (entities model.camela
-                [ ( Block.meshOka, ( vec3 0 0 0, ( 0, vec3 1 0 0 ) ) )
-                , ( Block.meshDa, ( vec3 1.1 0 0, ( 0, vec3 1 0 0 ) ) )
-                , ( Block.meshOka, ( vec3 2.2 0 0, ( 0, vec3 1 0 0 ) ) )
-                , ( Block.meshDa, ( vec3 3.3 0 0, ( 0, vec3 1 0 0 ) ) )
-                , ( Block.meshDa, ( vec3 0 1 0, ( 0, vec3 0 1 0 ) ) )
-                , ( Block.meshOka, ( vec3 1.1 1.1 0, ( 0, vec3 0 1 0 ) ) )
-                , ( Block.meshDa, ( vec3 2.2 1.1 0, ( 0, vec3 0 1 0 ) ) )
-                , ( Block.meshOka, ( vec3 3.3 1.1 1, ( 0, vec3 0 1 0 ) ) )
-                ]
+            (entities model.camera
+                (List.filter
+                    (\block ->
+                        case model.selected of
+                            Just b ->
+                                block /= b
+
+                            Nothing ->
+                                True
+                    )
+                    model.blocks
+                )
+                ++ (case model.selected of
+                        Just b ->
+                            [ entity (vec3 100 0 0) model.camera b ]
+
+                        Nothing ->
+                            []
+                   )
             )
         ]
     }
 
 
-entities : Shader.OrbitCamela -> List ( Mesh Shader.Vertex, Shader.Geo ) -> List WebGL.Entity
-entities camela list =
+entities : Shader.OrbitCamela -> List ( Okada, Shader.Geo ) -> List WebGL.Entity
+entities camera list =
     List.map
-        (\( mesh, geo ) ->
-            WebGL.entity
-                Shader.vertexShader
-                Shader.fragmentShader
-                mesh
-                (Shader.uniforms camela geo)
+        (\( okada, geo ) ->
+            entity (vec3 245 121 0) camera ( okada, geo )
         )
         list
+
+
+entity : Vec3 -> Shader.OrbitCamela -> ( Okada, Shader.Geo ) -> WebGL.Entity
+entity color camera ( okada, geo ) =
+    WebGL.entity
+        Shader.vertexShader
+        Shader.fragmentShader
+        (okadaMesh color okada)
+        (Shader.uniforms camera geo)

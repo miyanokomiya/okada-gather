@@ -1,4 +1,4 @@
-module Asset exposing (da, oka)
+module Asset exposing (cube, da, oka)
 
 import Math.Vector3 as Vec3 exposing (Vec3, add, vec3)
 import WebGL exposing (Mesh)
@@ -6,6 +6,49 @@ import WebGL exposing (Mesh)
 
 type alias Triangle =
     ( Vec3, Vec3, Vec3 )
+
+
+cube : List (List Triangle)
+cube =
+    let
+        a1 =
+            vec3 -0.5 -0.5 0.1
+
+        a2 =
+            vec3 0.5 -0.5 0.1
+
+        a3 =
+            vec3 -0.5 0.5 0.1
+
+        a4 =
+            vec3 0.5 0.5 0.1
+
+        b1 =
+            vec3 -0.5 -0.5 -0.1
+
+        b2 =
+            vec3 0.5 -0.5 -0.1
+
+        b3 =
+            vec3 -0.5 0.5 -0.1
+
+        b4 =
+            vec3 0.5 0.5 -0.1
+    in
+    [ [ ( a1, a2, a3 )
+      , ( a2, a4, a3 )
+      , ( b2, b1, b4 )
+      , ( b1, b3, b4 )
+      , ( b1, a1, b3 )
+      , ( a1, a3, b3 )
+      , ( a2, b2, a4 )
+      , ( b2, b4, a4 )
+      , ( b1, b2, a1 )
+      , ( b2, a2, a1 )
+      , ( a3, a4, b3 )
+      , ( a4, b4, b3 )
+      ]
+    ]
 
 
 oka : List (List Triangle)
