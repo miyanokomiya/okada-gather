@@ -1,27 +1,14 @@
-module Block exposing (Geo, Vertex, mesh, meshDa, meshOka)
+module Block exposing (mesh, meshDa, meshOka)
 
 import Array
 import Asset
 import Math.Matrix4 as Mat4
 import Math.Vector3 as Vec3 exposing (Vec3, add, vec3)
+import Shader
 import WebGL exposing (Mesh)
 
 
-type alias Vertex =
-    { color : Vec3
-    , position : Vec3
-    }
-
-
-type alias Rotation =
-    ( Float, Vec3 )
-
-
-type alias Geo =
-    ( Vec3, Rotation )
-
-
-convert : Geo -> Vec3 -> Vec3
+convert : Shader.Geo -> Vec3 -> Vec3
 convert ( position, ( radian, axis ) ) vec =
     vec
 
@@ -35,7 +22,7 @@ type alias Triangle =
     ( Vec3, Vec3, Vec3 )
 
 
-mesh : List Triangle -> Mesh Vertex
+mesh : List Triangle -> Mesh Shader.Vertex
 mesh list =
     list
         |> List.map (\tri -> face (vec3 245 121 0) tri)
@@ -43,25 +30,25 @@ mesh list =
         |> WebGL.triangles
 
 
-meshOka : Mesh Vertex
+meshOka : Mesh Shader.Vertex
 meshOka =
     Asset.oka
         |> List.concat
         |> mesh
 
 
-meshDa : Mesh Vertex
+meshDa : Mesh Shader.Vertex
 meshDa =
     Asset.da
         |> List.concat
         |> mesh
 
 
-face : Vec3 -> ( Vec3, Vec3, Vec3 ) -> List ( Vertex, Vertex, Vertex )
+face : Vec3 -> ( Vec3, Vec3, Vec3 ) -> List ( Shader.Vertex, Shader.Vertex, Shader.Vertex )
 face color ( a, b, c ) =
     let
         vertex position =
-            Vertex (Vec3.scale (1 / 255) color) position
+            Shader.Vertex (Vec3.scale (1 / 255) color) position
     in
     [ ( vertex a, vertex b, vertex c )
     ]
