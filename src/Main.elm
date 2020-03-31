@@ -19,8 +19,18 @@ type Okada
     | Da
 
 
-type alias BlockWithGeo =
-    ( Okada, Shader.Geo )
+type Status
+    = Default
+    | Selected
+    | Completed
+
+
+type alias GeoBlock =
+    { id : Int
+    , okada : Okada
+    , geo : Shader.Geo
+    , status : Status
+    }
 
 
 type alias Model =
@@ -28,8 +38,8 @@ type alias Model =
     , camera : Shader.OrbitCamela
     , position : ( Float, Float )
     , drag : Draggable.State String
-    , blocks : List BlockWithGeo
-    , selected : Maybe BlockWithGeo
+    , blocks : List GeoBlock
+    , selected : Maybe GeoBlock
     }
 
 
@@ -62,14 +72,10 @@ init _ =
       , position = ( 0, 0 )
       , drag = Draggable.init
       , blocks =
-            [ ( Oka, ( vec3 0 0 0, ( 0, vec3 1 0 0 ) ) )
-            , ( Da, ( vec3 1.1 0 0, ( 0, vec3 1 0 0 ) ) )
-            , ( Oka, ( vec3 2.2 0 0, ( 0, vec3 1 0 0 ) ) )
-            , ( Da, ( vec3 3.3 0 0, ( 0, vec3 1 0 0 ) ) )
-            , ( Da, ( vec3 0 1 0, ( 0, vec3 0 1 0 ) ) )
-            , ( Oka, ( vec3 1.1 1.1 0, ( 0, vec3 0 1 0 ) ) )
-            , ( Da, ( vec3 2.2 1.1 0, ( 0, vec3 0 1 0 ) ) )
-            , ( Oka, ( vec3 3.3 1.1 1, ( 0, vec3 0 1 0 ) ) )
+            [ { id = 1, okada = Oka, geo = ( vec3 0 0 0, Mat4.makeRotate 0 (vec3 1 0 0) ), status = Default }
+            , { id = 2, okada = Da, geo = ( vec3 1.1 0 0, Mat4.makeRotate 0 (vec3 1 0 0) ), status = Default }
+            , { id = 3, okada = Da, geo = ( vec3 0 1.1 0, Mat4.makeRotate (pi / 2) (vec3 0 1 0) ), status = Default }
+            , { id = 4, okada = Oka, geo = ( vec3 1.1 1.1 0, Mat4.makeRotate (pi / 2) (vec3 0 1 0) ), status = Default }
             ]
       , selected = Nothing
       }
@@ -121,7 +127,7 @@ update msg model =
             ( { model | selected = getClickedBlock model ( (x * 2) / toFloat width - 1, 1 - y / toFloat height * 2 ), position = ( x, y ) }, Cmd.none )
 
 
-getClickedBlock : Model -> ( Float, Float ) -> Maybe BlockWithGeo
+getClickedBlock : Model -> ( Float, Float ) -> Maybe GeoBlock
 getClickedBlock model pos =
     let
         origin =
@@ -133,25 +139,22 @@ getClickedBlock model pos =
         direction =
             Vec3.direction destination origin
     in
-    List.filter
-        (\( _, geo ) ->
-            let
-                ( p, ( rad, axis ) ) =
-                    geo
+    model.blocks
+        |> List.map
+            (\block ->
+                let
+                    ( p, r ) =
+                        block.geo
 
-                mat =
-                    Mat4.mul (Mat4.makeRotate rad axis) (Mat4.makeTranslate p)
+                    mat =
+                        Mat4.mul (Mat4.makeTranslate p) r
 
-                triangleList =
-                    List.map (\( v0, v1, v2 ) -> ( Mat4.transform mat v0, Mat4.transform mat v1, Mat4.transform mat v2 )) (List.concat Asset.cube)
-
-                isClicked =
-                    Shader.isCubeClicked origin direction triangleList
-            in
-            isClicked
-        )
-        model.blocks
-        |> List.head
+                    triangles =
+                        List.map (\( v0, v1, v2 ) -> ( Mat4.transform mat v0, Mat4.transform mat v1, Mat4.transform mat v2 )) (List.concat Asset.cube)
+                in
+                (triangles, block)
+            )
+        |> Shader.nearestClickedMesh origin direction
 
 
 subscriptions : Model -> Sub Msg
@@ -225,22 +228,22 @@ view model =
     }
 
 
-entities : Shader.OrbitCamela -> Mat4 -> List ( Okada, Shader.Geo ) -> List WebGL.Entity
+entities : Shader.OrbitCamela -> Mat4 -> List GeoBlock -> List WebGL.Entity
 entities camera perspective list =
     List.map
-        (\( okada, geo ) ->
-            entity (vec3 245 121 0) camera perspective ( okada, geo )
+        (\block ->
+            entity (vec3 245 121 0) camera perspective block
         )
         list
 
 
-entity : Vec3 -> Shader.OrbitCamela -> Mat4 -> ( Okada, Shader.Geo ) -> WebGL.Entity
-entity color camera perspective ( okada, geo ) =
+entity : Vec3 -> Shader.OrbitCamela -> Mat4 -> GeoBlock -> WebGL.Entity
+entity color camera perspective block =
     WebGL.entity
         Shader.vertexShader
         Shader.fragmentShader
-        (okadaMesh color okada)
-        (Shader.uniforms camera perspective geo)
+        (okadaMesh color block.okada)
+        (Shader.uniforms camera perspective block.geo)
 
 
 getPerspective : ( Int, Int ) -> Mat4

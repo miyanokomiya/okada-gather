@@ -6,6 +6,7 @@ module Shader exposing
     , fragmentShader
     , getClickPosition
     , isCubeClicked
+    , nearestClickedMesh
     , orbitCamelaPosition
     , uniforms
     , vertexShader
@@ -28,7 +29,7 @@ type alias Vertex =
 
 
 type alias Rotation =
-    ( Float, Vec3 )
+    Mat4
 
 
 type alias Geo =
@@ -51,8 +52,8 @@ type alias Uniforms =
 
 
 uniforms : OrbitCamela -> Mat4 -> Geo -> Uniforms
-uniforms camera perspective ( position, ( t, axis ) ) =
-    { rotation = Mat4.makeRotate t axis
+uniforms camera perspective ( position, rotation ) =
+    { rotation = rotation
     , translation = Mat4.makeTranslate position
     , perspective = perspective
     , camera = cameraLootAk camera
@@ -63,7 +64,6 @@ uniforms camera perspective ( position, ( t, axis ) ) =
 cameraLootAk : OrbitCamela -> Mat4
 cameraLootAk camera =
     Mat4.makeLookAt (orbitCamelaPosition camera) (vec3 0 0 0) (vec3 0 1 0)
-
 
 
 orbitCamelaPosition : OrbitCamela -> Vec3
@@ -92,7 +92,7 @@ vertexShader =
         uniform mat4 translation;
         varying vec3 vcolor;
         void main () {
-            gl_Position = perspective * camera * rotation * translation * vec4(position, 1.0);
+            gl_Position = perspective * camera * translation * rotation * vec4(position, 1.0);
             vcolor = color;
         }
 
@@ -114,10 +114,10 @@ fragmentShader =
 
 
 isCubeClicked : Vec3 -> Vec3 -> List Triangle -> Bool
-isCubeClicked origin destination list =
+isCubeClicked origin direction list =
     let
         intersect =
-            rayTriangleIntersect origin destination
+            rayTriangleIntersect origin direction
     in
     List.any
         (\triangle ->
@@ -132,6 +132,45 @@ isCubeClicked origin destination list =
                    )
         )
         list
+
+
+nearestClickedMesh : Vec3 -> Vec3 -> List ( List Triangle, a ) -> Maybe a
+nearestClickedMesh origin direction list =
+    list
+        |> clickedMeshList origin direction
+        |> sortByScaler origin
+        |> List.map (\( _, triangles ) -> triangles)
+        |> List.head
+
+
+clickedMeshList : Vec3 -> Vec3 -> List ( List Triangle, a ) -> List ( Vec3, a )
+clickedMeshList origin direction list =
+    let
+        intersect =
+            rayTriangleIntersect origin direction
+    in
+    list
+        |> List.filterMap
+            (\( triangles, a ) ->
+                clickedOnTriangles origin intersect triangles
+                    |> Maybe.map (\( v, _ ) -> ( v, a ))
+            )
+
+
+clickedOnTriangles : Vec3 -> (Triangle -> Maybe Vec3) -> List Triangle -> Maybe ( Vec3, List Triangle )
+clickedOnTriangles origin intersect triangles =
+    triangles
+        |> List.filterMap
+            (\triangle -> intersect triangle)
+        |> List.map (\v -> ( v, triangles ))
+        |> sortByScaler origin
+        |> List.head
+
+
+sortByScaler : Vec3 -> List ( Vec3, a ) -> List ( Vec3, a )
+sortByScaler origin list =
+    list
+        |> List.sortBy (\( v, _ ) -> Vec3.distance origin v)
 
 
 rayTriangleIntersect : Vec3 -> Vec3 -> Triangle -> Maybe Vec3
@@ -194,7 +233,7 @@ rayTriangleIntersect rayOrigin rayDirection ( triangle0, triangle1, triangle2 ) 
                 Just (vec3 v0 v1 v2)
 
 
-{-| camela -> (0 ~ 1, 0 ~ 1) -> vec3
+{-| camela -> perspective -> (0 ~ 1, 0 ~ 1) -> vec3
 -}
 getClickPosition : OrbitCamela -> Mat4 -> ( Float, Float ) -> Vec3
 getClickPosition camera perspective ( x, y ) =

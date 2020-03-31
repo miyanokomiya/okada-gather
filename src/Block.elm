@@ -8,11 +8,6 @@ import Shader
 import WebGL exposing (Mesh)
 
 
-convert : Shader.Geo -> Vec3 -> Vec3
-convert ( position, ( radian, axis ) ) vec =
-    vec
-
-
 
 -- |> Mat4.transform (Mat4.rotate radian axis Mat4.identity)
 -- |> add position
