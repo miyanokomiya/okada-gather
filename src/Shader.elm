@@ -4,9 +4,9 @@ module Shader exposing
     , Triangle
     , Vertex
     , fragmentShader
-    ,orbitCamelaPosition
     , getClickPosition
     , isCubeClicked
+    , orbitCamelaPosition
     , uniforms
     , vertexShader
     )
@@ -50,8 +50,8 @@ type alias Uniforms =
     }
 
 
-uniforms : OrbitCamela -> Geo -> Uniforms
-uniforms camera ( position, ( t, axis ) ) =
+uniforms : OrbitCamela -> Mat4 -> Geo -> Uniforms
+uniforms camera perspective ( position, ( t, axis ) ) =
     { rotation = Mat4.makeRotate t axis
     , translation = Mat4.makeTranslate position
     , perspective = perspective
@@ -64,10 +64,6 @@ cameraLootAk : OrbitCamela -> Mat4
 cameraLootAk camera =
     Mat4.makeLookAt (orbitCamelaPosition camera) (vec3 0 0 0) (vec3 0 1 0)
 
-
-perspective : Mat4
-perspective =
-    Mat4.makePerspective 45 1 0.01 100
 
 
 orbitCamelaPosition : OrbitCamela -> Vec3
@@ -198,11 +194,13 @@ rayTriangleIntersect rayOrigin rayDirection ( triangle0, triangle1, triangle2 ) 
                 Just (vec3 v0 v1 v2)
 
 
-getClickPosition : OrbitCamela -> ( Float, Float ) -> Vec3
-getClickPosition camera ( x, y ) =
+{-| camela -> (0 ~ 1, 0 ~ 1) -> vec3
+-}
+getClickPosition : OrbitCamela -> Mat4 -> ( Float, Float ) -> Vec3
+getClickPosition camera perspective ( x, y ) =
     let
         normalizedPosition =
-            ( (x * 2) / 1000 - 1, 1 - y / 1000 * 2 )
+            ( x, y )
 
         homogeneousClipCoordinates =
             Vec4.vec4

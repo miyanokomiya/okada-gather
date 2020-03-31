@@ -24,7 +24,8 @@ type alias BlockWithGeo =
 
 
 type alias Model =
-    { camera : Shader.OrbitCamela
+    { size : ( Int, Int )
+    , camera : Shader.OrbitCamela
     , position : ( Float, Float )
     , drag : Draggable.State String
     , blocks : List BlockWithGeo
@@ -56,7 +57,8 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { camera = ( 10, 0, 0 )
+    ( { size = ( 800, 600 )
+      , camera = ( 10, 0, 0 )
       , position = ( 0, 0 )
       , drag = Draggable.init
       , blocks =
@@ -93,6 +95,9 @@ limitRadian r =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
+        ( width, height ) =
+            model.size
+
         ( cr, ca, cb ) =
             model.camera
     in
@@ -112,8 +117,8 @@ update msg model =
         DragMsg dragMsg ->
             Draggable.update dragConfig dragMsg model
 
-        ClickMsg pos ->
-            ( { model | selected = getClickedBlock model pos, position = pos }, Cmd.none )
+        ClickMsg ( x, y ) ->
+            ( { model | selected = getClickedBlock model ( (x * 2) / toFloat width - 1, 1 - y / toFloat height * 2 ), position = ( x, y ) }, Cmd.none )
 
 
 getClickedBlock : Model -> ( Float, Float ) -> Maybe BlockWithGeo
@@ -123,7 +128,7 @@ getClickedBlock model pos =
             Shader.orbitCamelaPosition model.camera
 
         destination =
-            Shader.getClickPosition model.camera pos
+            Shader.getClickPosition model.camera (getPerspective model.size) pos
 
         direction =
             Vec3.direction destination origin
@@ -159,16 +164,21 @@ subscriptions model =
 
 view : Model -> Browser.Document Msg
 view model =
+    let
+        ( w, h ) =
+            model.size
+
+        ( x, y ) =
+            model.position
+
+        perspective =
+            getPerspective model.size
+    in
     { title = "岡田集め - リメイク"
     , body =
         [ Html.div []
             [ Html.text
                 (let
-                    -- ( cr, ca, cb ) =
-                    --     model.camera
-                    ( x, y ) =
-                        model.position
-
                     selected =
                         case model.selected of
                             Just _ ->
@@ -181,8 +191,8 @@ view model =
                 )
             ]
         , WebGL.toHtml
-            ([ width 1000
-             , height 1000
+            ([ width w
+             , height h
              , style "display" "block"
              , style "border" "1px solid black"
              , Draggable.mouseTrigger "my-element" DragMsg
@@ -191,6 +201,7 @@ view model =
                 ++ Draggable.touchTriggers "my-element" DragMsg
             )
             (entities model.camera
+                perspective
                 (List.filter
                     (\block ->
                         case model.selected of
@@ -204,7 +215,7 @@ view model =
                 )
                 ++ (case model.selected of
                         Just b ->
-                            [ entity (vec3 100 0 0) model.camera b ]
+                            [ entity (vec3 100 0 0) model.camera perspective b ]
 
                         Nothing ->
                             []
@@ -214,19 +225,24 @@ view model =
     }
 
 
-entities : Shader.OrbitCamela -> List ( Okada, Shader.Geo ) -> List WebGL.Entity
-entities camera list =
+entities : Shader.OrbitCamela -> Mat4 -> List ( Okada, Shader.Geo ) -> List WebGL.Entity
+entities camera perspective list =
     List.map
         (\( okada, geo ) ->
-            entity (vec3 245 121 0) camera ( okada, geo )
+            entity (vec3 245 121 0) camera perspective ( okada, geo )
         )
         list
 
 
-entity : Vec3 -> Shader.OrbitCamela -> ( Okada, Shader.Geo ) -> WebGL.Entity
-entity color camera ( okada, geo ) =
+entity : Vec3 -> Shader.OrbitCamela -> Mat4 -> ( Okada, Shader.Geo ) -> WebGL.Entity
+entity color camera perspective ( okada, geo ) =
     WebGL.entity
         Shader.vertexShader
         Shader.fragmentShader
         (okadaMesh color okada)
-        (Shader.uniforms camera geo)
+        (Shader.uniforms camera perspective geo)
+
+
+getPerspective : ( Int, Int ) -> Mat4
+getPerspective ( width, height ) =
+    Mat4.makePerspective 45 (toFloat width / toFloat height) 0.01 100
