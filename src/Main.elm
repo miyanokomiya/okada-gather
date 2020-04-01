@@ -68,11 +68,12 @@ main =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { size = ( 800, 600 )
-      , camera = ( 10, 0, 0 )
+      , camera = ( 14, 0, 0 )
       , position = ( 0, 0 )
       , drag = Draggable.init
       , blocks =
             [ { id = 1, okada = Oka, geo = ( vec3 0 0 0, Mat4.makeRotate 0 (vec3 1 0 0) ), status = Default }
+
             , { id = 2, okada = Da, geo = ( vec3 1.1 0 0, Mat4.makeRotate 0 (vec3 1 0 0) ), status = Default }
             , { id = 3, okada = Da, geo = ( vec3 0 1.1 0, Mat4.makeRotate (pi / 2) (vec3 0 1 0) ), status = Default }
             , { id = 4, okada = Oka, geo = ( vec3 1.1 1.1 0, Mat4.makeRotate (pi / 2) (vec3 0 1 0) ), status = Default }
@@ -83,14 +84,14 @@ init _ =
     )
 
 
-okadaMesh : Vec3 -> Okada -> Mesh Shader.Vertex
-okadaMesh color okada =
+okadaMesh : Vec3 -> Vec3 -> Okada -> Mesh Shader.Vertex
+okadaMesh faceColor sideColor okada =
     case okada of
         Oka ->
-            Block.meshOka color
+            Block.meshOka faceColor sideColor
 
         Da ->
-            Block.meshDa color
+            Block.meshDa faceColor sideColor
 
 
 limitRadian : Float -> Float
@@ -152,7 +153,7 @@ getClickedBlock model pos =
                     triangles =
                         List.map (\( v0, v1, v2 ) -> ( Mat4.transform mat v0, Mat4.transform mat v1, Mat4.transform mat v2 )) (List.concat Asset.cube)
                 in
-                (triangles, block)
+                ( triangles, block )
             )
         |> Shader.nearestClickedMesh origin direction
 
@@ -218,7 +219,7 @@ view model =
                 )
                 ++ (case model.selected of
                         Just b ->
-                            [ entity (vec3 100 0 0) model.camera perspective b ]
+                            [ entity (vec3 80 0 0) (vec3 100 0 0) model.camera perspective b ]
 
                         Nothing ->
                             []
@@ -232,17 +233,17 @@ entities : Shader.OrbitCamela -> Mat4 -> List GeoBlock -> List WebGL.Entity
 entities camera perspective list =
     List.map
         (\block ->
-            entity (vec3 245 121 0) camera perspective block
+            entity (vec3 145 121 0) (vec3 245 121 0) camera perspective block
         )
         list
 
 
-entity : Vec3 -> Shader.OrbitCamela -> Mat4 -> GeoBlock -> WebGL.Entity
-entity color camera perspective block =
+entity : Vec3 -> Vec3 -> Shader.OrbitCamela -> Mat4 -> GeoBlock -> WebGL.Entity
+entity faceColor sideColor camera perspective block =
     WebGL.entity
         Shader.vertexShader
         Shader.fragmentShader
-        (okadaMesh color block.okada)
+        (okadaMesh faceColor sideColor block.okada)
         (Shader.uniforms camera perspective block.geo)
 
 
