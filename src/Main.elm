@@ -33,12 +33,36 @@ type alias GeoBlock =
     }
 
 
+type alias OkadaPair =
+    ( GeoBlock, GeoBlock )
+
+
+type alias ColorPair =
+    ( Vec3, Vec3 )
+
+
+defaultColor : ColorPair
+defaultColor =
+    ( vec3 60 179 113, vec3 47 79 79 )
+
+
+selectedColor : ColorPair
+selectedColor =
+    ( vec3 165 42 42, vec3 204 0 153 )
+
+
+completedColor : ColorPair
+completedColor =
+    ( vec3 255 215 0, vec3 255 165 0 )
+
+
 type alias Model =
     { size : ( Int, Int )
     , camera : Shader.OrbitCamela
     , downTime : Float
     , drag : Draggable.State String
     , blocks : List GeoBlock
+    , pairs : List OkadaPair
     , selected : Maybe GeoBlock
     }
 
@@ -72,11 +96,30 @@ init _ =
       , downTime = 0
       , drag = Draggable.init
       , blocks =
-            [ { id = 1, okada = Oka, geo = ( vec3 0 0 0, Mat4.makeRotate 0 (vec3 1 0 0) ), status = Default }
-            , { id = 2, okada = Da, geo = ( vec3 1.1 0 0, Mat4.makeRotate 0 (vec3 1 0 0) ), status = Default }
-            , { id = 3, okada = Da, geo = ( vec3 0 1.1 0, Mat4.makeRotate (pi / 2) (vec3 0 1 0) ), status = Default }
-            , { id = 4, okada = Oka, geo = ( vec3 1.1 1.1 0, Mat4.makeRotate (pi / 2) (vec3 0 1 0) ), status = Default }
-            ]
+            let
+                count =
+                  1
+            in
+            List.range 0 count
+                |> List.map
+                    (\i ->
+                        List.range 0 count
+                            |> List.map
+                                (\j ->
+                                    { id = i * 1000 + j
+                                    , okada =
+                                        if modBy 2 (i + j) == 0 then
+                                            Oka
+
+                                        else
+                                            Da
+                                    , geo = ( vec3 (1.1 * (toFloat j - (count / 2))) (1.1 * (toFloat i - (count / 2))) 0, Mat4.makeRotate 0 (vec3 1 0 0) )
+                                    , status = Default
+                                    }
+                                )
+                    )
+                |> List.concat
+      , pairs = []
       , selected = Nothing
       }
     , Cmd.none
@@ -126,15 +169,62 @@ update msg model =
 
         ClickMsg ( x, y ) ->
             if model.downTime < 10 then
-                ( { model
-                    | selected = getClickedBlock model ( (x * 2) / toFloat width - 1, 1 - y / toFloat height * 2 )
-                    , downTime = 0
-                  }
+                let
+                    nextModel =
+                        clickBlock model (getClickedBlock model ( (x * 2) / toFloat width - 1, 1 - y / toFloat height * 2 ))
+                in
+                ( { nextModel | downTime = 0 }
                 , Cmd.none
                 )
 
             else
                 ( { model | downTime = 0 }, Cmd.none )
+
+
+clickBlock : Model -> Maybe GeoBlock -> Model
+clickBlock model maybeBlock =
+    case maybeBlock of
+        Nothing ->
+            { model | selected = Nothing }
+
+        Just block ->
+            case model.selected of
+                Nothing ->
+                    { model | selected = maybeBlock }
+
+                Just current ->
+                    if block == current then
+                        { model
+                            | selected = Nothing
+                        }
+
+                    else
+                        let
+                            pair =
+                                createPair block current
+                        in
+                        case pair of
+                            Just p ->
+                                { model
+                                    | selected = Nothing
+                                    , blocks = List.filter (\b -> b /= block && b /= current) model.blocks
+                                    , pairs = List.append model.pairs [ p ]
+                                }
+
+                            Nothing ->
+                                model
+
+
+createPair : GeoBlock -> GeoBlock -> Maybe OkadaPair
+createPair a b =
+    if a.okada == Oka && b.okada == Da then
+        Just ( a, b )
+
+    else if a.okada == Da && b.okada == Oka then
+        Just ( b, a )
+
+    else
+        Nothing
 
 
 getClickedBlock : Model -> ( Float, Float ) -> Maybe GeoBlock
@@ -210,7 +300,8 @@ view model =
              ]
                 ++ Draggable.touchTriggers "my-element" DragMsg
             )
-            (entities model.camera
+            (entities defaultColor
+                model.camera
                 perspective
                 (List.filter
                     (\block ->
@@ -225,27 +316,35 @@ view model =
                 )
                 ++ (case model.selected of
                         Just b ->
-                            [ entity (vec3 80 0 0) (vec3 100 0 0) model.camera perspective b ]
+                            [ entity selectedColor model.camera perspective b ]
 
                         Nothing ->
                             []
                    )
+                ++ entities completedColor
+                    model.camera
+                    perspective
+                    (model.pairs
+                        |> List.map
+                            (\( oka, da ) -> [ oka, da ])
+                        |> List.concat
+                    )
             )
         ]
     }
 
 
-entities : Shader.OrbitCamela -> Mat4 -> List GeoBlock -> List WebGL.Entity
-entities camera perspective list =
+entities : ColorPair -> Shader.OrbitCamela -> Mat4 -> List GeoBlock -> List WebGL.Entity
+entities colorPair camera perspective list =
     List.map
         (\block ->
-            entity (vec3 145 121 0) (vec3 245 121 0) camera perspective block
+            entity colorPair camera perspective block
         )
         list
 
 
-entity : Vec3 -> Vec3 -> Shader.OrbitCamela -> Mat4 -> GeoBlock -> WebGL.Entity
-entity faceColor sideColor camera perspective block =
+entity : ColorPair -> Shader.OrbitCamela -> Mat4 -> GeoBlock -> WebGL.Entity
+entity ( faceColor, sideColor ) camera perspective block =
     WebGL.entity
         Shader.vertexShader
         Shader.fragmentShader
