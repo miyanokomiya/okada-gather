@@ -19,17 +19,11 @@ type Okada
     | Da
 
 
-type Status
-    = Default
-    | Selected
-    | Completed
-
-
 type alias GeoBlock =
     { id : Int
     , okada : Okada
     , geo : Shader.Geo
-    , status : Status
+    , mesh : Mesh Shader.Vertex
     }
 
 
@@ -98,7 +92,7 @@ init _ =
       , blocks =
             let
                 count =
-                  1
+                    9
             in
             List.range 0 count
                 |> List.map
@@ -106,15 +100,18 @@ init _ =
                         List.range 0 count
                             |> List.map
                                 (\j ->
-                                    { id = i * 1000 + j
-                                    , okada =
-                                        if modBy 2 (i + j) == 0 then
-                                            Oka
+                                    let
+                                        okada =
+                                            if modBy 2 (i + j) == 0 then
+                                                Oka
 
-                                        else
-                                            Da
+                                            else
+                                                Da
+                                    in
+                                    { id = i * 1000 + j
+                                    , okada = okada
                                     , geo = ( vec3 (1.1 * (toFloat j - (count / 2))) (1.1 * (toFloat i - (count / 2))) 0, Mat4.makeRotate 0 (vec3 1 0 0) )
-                                    , status = Default
+                                    , mesh = okadaMesh defaultColor okada
                                     }
                                 )
                     )
@@ -126,8 +123,8 @@ init _ =
     )
 
 
-okadaMesh : Vec3 -> Vec3 -> Okada -> Mesh Shader.Vertex
-okadaMesh faceColor sideColor okada =
+okadaMesh : ColorPair -> Okada -> Mesh Shader.Vertex
+okadaMesh ( faceColor, sideColor ) okada =
     case okada of
         Oka ->
             Block.meshOka faceColor sideColor
@@ -181,21 +178,51 @@ update msg model =
                 ( { model | downTime = 0 }, Cmd.none )
 
 
+toDefaultBlock : GeoBlock -> GeoBlock
+toDefaultBlock src =
+    { src | mesh = okadaMesh defaultColor src.okada }
+
+
+toSelectedBlock : GeoBlock -> GeoBlock
+toSelectedBlock src =
+    { src | mesh = okadaMesh selectedColor src.okada }
+
+
+toCompletedBlock : GeoBlock -> GeoBlock
+toCompletedBlock src =
+    { src | mesh = okadaMesh completedColor src.okada }
+
+
 clickBlock : Model -> Maybe GeoBlock -> Model
 clickBlock model maybeBlock =
     case maybeBlock of
         Nothing ->
-            { model | selected = Nothing }
+            { model
+                | selected = Nothing
+                , blocks =
+                    model.blocks
+                        ++ (case model.selected of
+                                Just b ->
+                                    [ toDefaultBlock b ]
+
+                                Nothing ->
+                                    []
+                           )
+            }
 
         Just block ->
             case model.selected of
                 Nothing ->
-                    { model | selected = maybeBlock }
+                    { model
+                        | selected = Maybe.map toSelectedBlock maybeBlock
+                        , blocks = List.filter (\b -> b /= block) model.blocks
+                    }
 
                 Just current ->
                     if block == current then
                         { model
                             | selected = Nothing
+                            , blocks = model.blocks ++ [ toDefaultBlock current ]
                         }
 
                     else
@@ -207,7 +234,7 @@ clickBlock model maybeBlock =
                             Just p ->
                                 { model
                                     | selected = Nothing
-                                    , blocks = List.filter (\b -> b /= block && b /= current) model.blocks
+                                    , blocks = List.filter (\b -> b /= block) model.blocks
                                     , pairs = List.append model.pairs [ p ]
                                 }
 
@@ -218,10 +245,10 @@ clickBlock model maybeBlock =
 createPair : GeoBlock -> GeoBlock -> Maybe OkadaPair
 createPair a b =
     if a.okada == Oka && b.okada == Da then
-        Just ( a, b )
+        Just ( toCompletedBlock a, toCompletedBlock b )
 
     else if a.okada == Da && b.okada == Oka then
-        Just ( b, a )
+        Just ( toCompletedBlock b, toCompletedBlock a )
 
     else
         Nothing
@@ -239,7 +266,7 @@ getClickedBlock model pos =
         direction =
             Vec3.direction destination origin
     in
-    model.blocks
+    (model.blocks ++ Maybe.withDefault [] (Maybe.map (\b -> [b]) model.selected))
         |> List.map
             (\block ->
                 let
@@ -300,28 +327,12 @@ view model =
              ]
                 ++ Draggable.touchTriggers "my-element" DragMsg
             )
-            (entities defaultColor
+            (entities
                 model.camera
                 perspective
-                (List.filter
-                    (\block ->
-                        case model.selected of
-                            Just b ->
-                                block /= b
-
-                            Nothing ->
-                                True
-                    )
-                    model.blocks
-                )
-                ++ (case model.selected of
-                        Just b ->
-                            [ entity selectedColor model.camera perspective b ]
-
-                        Nothing ->
-                            []
-                   )
-                ++ entities completedColor
+                model.blocks
+                ++ Maybe.withDefault [] (Maybe.map (\b -> [ entity model.camera perspective b ]) model.selected)
+                ++ entities
                     model.camera
                     perspective
                     (model.pairs
@@ -334,21 +345,21 @@ view model =
     }
 
 
-entities : ColorPair -> Shader.OrbitCamela -> Mat4 -> List GeoBlock -> List WebGL.Entity
-entities colorPair camera perspective list =
+entities : Shader.OrbitCamela -> Mat4 -> List GeoBlock -> List WebGL.Entity
+entities camera perspective list =
     List.map
         (\block ->
-            entity colorPair camera perspective block
+            entity camera perspective block
         )
         list
 
 
-entity : ColorPair -> Shader.OrbitCamela -> Mat4 -> GeoBlock -> WebGL.Entity
-entity ( faceColor, sideColor ) camera perspective block =
+entity : Shader.OrbitCamela -> Mat4 -> GeoBlock -> WebGL.Entity
+entity camera perspective block =
     WebGL.entity
         Shader.vertexShader
         Shader.fragmentShader
-        (okadaMesh faceColor sideColor block.okada)
+        block.mesh
         (Shader.uniforms camera perspective block.geo)
 
 
