@@ -36,7 +36,7 @@ type alias GeoBlock =
 type alias Model =
     { size : ( Int, Int )
     , camera : Shader.OrbitCamela
-    , position : ( Float, Float )
+    , downTime : Float
     , drag : Draggable.State String
     , blocks : List GeoBlock
     , selected : Maybe GeoBlock
@@ -69,11 +69,10 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { size = ( 800, 600 )
       , camera = ( 14, 0, 0 )
-      , position = ( 0, 0 )
+      , downTime = 0
       , drag = Draggable.init
       , blocks =
             [ { id = 1, okada = Oka, geo = ( vec3 0 0 0, Mat4.makeRotate 0 (vec3 1 0 0) ), status = Default }
-
             , { id = 2, okada = Da, geo = ( vec3 1.1 0 0, Mat4.makeRotate 0 (vec3 1 0 0) ), status = Default }
             , { id = 3, okada = Da, geo = ( vec3 0 1.1 0, Mat4.makeRotate (pi / 2) (vec3 0 1 0) ), status = Default }
             , { id = 4, okada = Oka, geo = ( vec3 1.1 1.1 0, Mat4.makeRotate (pi / 2) (vec3 0 1 0) ), status = Default }
@@ -117,6 +116,7 @@ update msg model =
         OnDragBy ( dx, dy ) ->
             ( { model
                 | camera = ( cr, ca - dx / 30, limitRadian (cb - dy / 30) )
+                , downTime = model.downTime + 1
               }
             , Cmd.none
             )
@@ -125,7 +125,16 @@ update msg model =
             Draggable.update dragConfig dragMsg model
 
         ClickMsg ( x, y ) ->
-            ( { model | selected = getClickedBlock model ( (x * 2) / toFloat width - 1, 1 - y / toFloat height * 2 ), position = ( x, y ) }, Cmd.none )
+            if model.downTime < 10 then
+                ( { model
+                    | selected = getClickedBlock model ( (x * 2) / toFloat width - 1, 1 - y / toFloat height * 2 )
+                    , downTime = 0
+                  }
+                , Cmd.none
+                )
+
+            else
+                ( { model | downTime = 0 }, Cmd.none )
 
 
 getClickedBlock : Model -> ( Float, Float ) -> Maybe GeoBlock
@@ -172,9 +181,6 @@ view model =
         ( w, h ) =
             model.size
 
-        ( x, y ) =
-            model.position
-
         perspective =
             getPerspective model.size
     in
@@ -191,7 +197,7 @@ view model =
                             Nothing ->
                                 "none"
                  in
-                 selected ++ " | " ++ String.fromFloat x ++ ", " ++ String.fromFloat y
+                 selected ++ " | " ++ String.fromFloat model.downTime
                 )
             ]
         , WebGL.toHtml
