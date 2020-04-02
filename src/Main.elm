@@ -127,7 +127,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     let
         model =
-            initModel 1
+            initModel 2
     in
     ( model
     , generateSpreadCmd model
@@ -154,29 +154,24 @@ initModel level =
     , blocks =
         let
             count =
-                toFloat (countAtLevel level)
+                countAtLevel level
         in
-        List.range 0 (round count)
+        List.range 1 (2 * (count + 1))
             |> List.map
                 (\i ->
-                    List.range 0 (round count)
-                        |> List.map
-                            (\j ->
-                                let
-                                    okada =
-                                        if modBy 2 (i + j) == 0 then
-                                            Oka
+                    let
+                        okada =
+                            if modBy 2 i == 0 then
+                                Oka
 
-                                        else
-                                            Da
-                                in
-                                { id = i * 1000 + j
-                                , okada = okada
-                                , geo = ( vec3 (1.1 * (toFloat j - (count / 2))) (1.1 * (toFloat i - (count / 2))) 0, Mat4.makeRotate 0 (vec3 1 0 0) )
-                                }
-                            )
+                            else
+                                Da
+                    in
+                    { id = i
+                    , okada = okada
+                    , geo = ( vec3 0 0 0, Mat4.makeRotate 0 (vec3 1 0 0) )
+                    }
                 )
-            |> List.concat
     , pairs = []
     , selected = Nothing
     , meshMap =
