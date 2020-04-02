@@ -11,6 +11,8 @@ import Html.Events
 import Html.Events.Extra.Mouse as Mouse
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
+import Random
+import Random.Extra
 import Shader
 import WebGL exposing (Mesh)
 
@@ -73,8 +75,32 @@ type alias Model =
     }
 
 
+spreadBlock : Float -> GeoBlock -> Random.Generator GeoBlock
+spreadBlock radius block =
+    Random.map (\geo -> { block | geo = geo }) (randomGeo radius)
+
+
+randomGeo : Float -> Random.Generator Shader.Geo
+randomGeo radius =
+    Random.map3
+        (\rad axis pos -> ( pos, Mat4.makeRotate rad axis ))
+        (Random.float 0 (2 * pi))
+        (randomVec3 1)
+        (randomVec3 radius)
+
+
+randomVec3 : Float -> Random.Generator Vec3
+randomVec3 radius =
+    Random.map3
+        (\x y z -> vec3 x y z)
+        (Random.float -radius radius)
+        (Random.float -radius radius)
+        (Random.float -radius radius)
+
+
 type Msg
     = Reset
+    | Spread (List GeoBlock)
     | Next
     | Delta Float
     | OnDragBy Draggable.Delta
@@ -99,7 +125,13 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( initModel 1, Cmd.none )
+    let
+        model =
+            initModel 1
+    in
+    ( model
+    , generateSpreadCmd model
+    )
 
 
 countAtLevel : Int -> Int
@@ -107,11 +139,16 @@ countAtLevel level =
     1 * (level * 2 - 1)
 
 
+cameraRadius : Int -> Float
+cameraRadius level =
+    4 + toFloat (4 * level)
+
+
 initModel : Int -> Model
 initModel level =
     { size = ( 400, 600 )
     , level = level
-    , camera = ( 4 + toFloat (4 * level), pi / 8, pi / 16 )
+    , camera = ( cameraRadius level, pi / 8, pi / 16 )
     , downTime = 0
     , drag = Draggable.init
     , blocks =
@@ -181,10 +218,19 @@ update msg model =
     in
     case msg of
         Reset ->
-            init ()
+            ( initModel 1
+            , generateSpreadCmd model
+            )
+
+        Spread blocks ->
+            ( { model | blocks = blocks }
+            , Cmd.none
+            )
 
         Next ->
-            ( nextLevel model, Cmd.none )
+            ( nextLevel model
+            , generateSpreadCmd model
+            )
 
         Delta dt ->
             if isLevelCompleted model && model.downTime == 0 then
@@ -192,7 +238,7 @@ update msg model =
                     ( a, b, c ) =
                         model.camera
                 in
-                ( { model | camera = ( a, b + (dt / 1000), c ) }
+                ( { model | camera = ( a, b - (dt / 1000), c ) }
                 , Cmd.none
                 )
 
@@ -224,6 +270,11 @@ update msg model =
 
             else
                 ( { model | downTime = 0 }, Cmd.none )
+
+
+generateSpreadCmd : Model -> Cmd Msg
+generateSpreadCmd model =
+    Random.generate Spread (Random.Extra.traverse (\b -> spreadBlock (cameraRadius model.level * 0.2) b) model.blocks)
 
 
 clickBlock : Model -> Maybe GeoBlock -> Model
@@ -324,7 +375,7 @@ isLevelCompleted model =
 
 isAllLevelCompleted : Model -> Bool
 isAllLevelCompleted model =
-    model.level == 1 && isLevelCompleted model
+    model.level == 10 && isLevelCompleted model
 
 
 subscriptions : Model -> Sub Msg
