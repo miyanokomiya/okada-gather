@@ -24,7 +24,6 @@ type alias GeoBlock =
     { id : Int
     , okada : Okada
     , geo : Shader.Geo
-    , mesh : Mesh Shader.Vertex
     }
 
 
@@ -51,6 +50,12 @@ completedColor =
     ( vec3 255 215 0, vec3 255 165 0 )
 
 
+type alias MeshSet =
+    { oka : Mesh Shader.Vertex
+    , da : Mesh Shader.Vertex
+    }
+
+
 type alias Model =
     { size : ( Int, Int )
     , camera : Shader.OrbitCamela
@@ -59,6 +64,11 @@ type alias Model =
     , blocks : List GeoBlock
     , pairs : List OkadaPair
     , selected : Maybe GeoBlock
+    , meshMap :
+        { default : MeshSet
+        , selected : MeshSet
+        , completed : MeshSet
+        }
     }
 
 
@@ -113,13 +123,17 @@ init _ =
                                     { id = i * 1000 + j
                                     , okada = okada
                                     , geo = ( vec3 (1.1 * (toFloat j - (count / 2))) (1.1 * (toFloat i - (count / 2))) 0, Mat4.makeRotate 0 (vec3 1 0 0) )
-                                    , mesh = okadaMesh defaultColor okada
                                     }
                                 )
                     )
                 |> List.concat
       , pairs = []
       , selected = Nothing
+      , meshMap =
+            { default = { oka = okadaMesh defaultColor Oka, da = okadaMesh defaultColor Da }
+            , selected = { oka = okadaMesh selectedColor Oka, da = okadaMesh selectedColor Da }
+            , completed = { oka = okadaMesh completedColor Oka, da = okadaMesh completedColor Da }
+            }
       }
     , Cmd.none
     )
@@ -150,7 +164,8 @@ update msg model =
             model.camera
     in
     case msg of
-        Reset -> init ()
+        Reset ->
+            init ()
 
         Delta _ ->
             ( model
@@ -182,21 +197,6 @@ update msg model =
                 ( { model | downTime = 0 }, Cmd.none )
 
 
-toDefaultBlock : GeoBlock -> GeoBlock
-toDefaultBlock src =
-    { src | mesh = okadaMesh defaultColor src.okada }
-
-
-toSelectedBlock : GeoBlock -> GeoBlock
-toSelectedBlock src =
-    { src | mesh = okadaMesh selectedColor src.okada }
-
-
-toCompletedBlock : GeoBlock -> GeoBlock
-toCompletedBlock src =
-    { src | mesh = okadaMesh completedColor src.okada }
-
-
 clickBlock : Model -> Maybe GeoBlock -> Model
 clickBlock model maybeBlock =
     case maybeBlock of
@@ -207,7 +207,7 @@ clickBlock model maybeBlock =
                     model.blocks
                         ++ (case model.selected of
                                 Just b ->
-                                    [ toDefaultBlock b ]
+                                    [ b ]
 
                                 Nothing ->
                                     []
@@ -218,7 +218,7 @@ clickBlock model maybeBlock =
             case model.selected of
                 Nothing ->
                     { model
-                        | selected = Maybe.map toSelectedBlock maybeBlock
+                        | selected = maybeBlock
                         , blocks = List.filter (\b -> b /= block) model.blocks
                     }
 
@@ -226,7 +226,7 @@ clickBlock model maybeBlock =
                     if block == current then
                         { model
                             | selected = Nothing
-                            , blocks = model.blocks ++ [ toDefaultBlock current ]
+                            , blocks = model.blocks ++ [ current ]
                         }
 
                     else
@@ -249,10 +249,10 @@ clickBlock model maybeBlock =
 createPair : GeoBlock -> GeoBlock -> Maybe OkadaPair
 createPair a b =
     if a.okada == Oka && b.okada == Da then
-        Just ( toCompletedBlock a, toCompletedBlock b )
+        Just ( a, b )
 
     else if a.okada == Da && b.okada == Oka then
-        Just ( toCompletedBlock b, toCompletedBlock a )
+        Just ( b, a )
 
     else
         Nothing
@@ -334,11 +334,13 @@ view model =
             (entities
                 model.camera
                 perspective
+                model.meshMap.default
                 model.blocks
-                ++ Maybe.withDefault [] (Maybe.map (\b -> [ entity model.camera perspective b ]) model.selected)
+                ++ Maybe.withDefault [] (Maybe.map (\b -> [ entity model.camera perspective model.meshMap.selected b ]) model.selected)
                 ++ entities
                     model.camera
                     perspective
+                    model.meshMap.completed
                     (model.pairs
                         |> List.map
                             (\( oka, da ) -> [ oka, da ])
@@ -355,22 +357,31 @@ view model =
     }
 
 
-entities : Shader.OrbitCamela -> Mat4 -> List GeoBlock -> List WebGL.Entity
-entities camera perspective list =
+entities : Shader.OrbitCamela -> Mat4 -> MeshSet -> List GeoBlock -> List WebGL.Entity
+entities camera perspective set list =
     List.map
         (\block ->
-            entity camera perspective block
+            entity camera perspective set block
         )
         list
 
 
-entity : Shader.OrbitCamela -> Mat4 -> GeoBlock -> WebGL.Entity
-entity camera perspective block =
+entity : Shader.OrbitCamela -> Mat4 -> MeshSet -> GeoBlock -> WebGL.Entity
+entity camera perspective set block =
     WebGL.entity
         Shader.vertexShader
         Shader.fragmentShader
-        block.mesh
+        (toMesh set block)
         (Shader.uniforms camera perspective block.geo)
+
+
+toMesh : MeshSet -> GeoBlock -> Mesh Shader.Vertex
+toMesh set block =
+    if block.okada == Oka then
+        set.oka
+
+    else
+        set.da
 
 
 getPerspective : ( Int, Int ) -> Mat4
