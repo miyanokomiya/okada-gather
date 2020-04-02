@@ -5,7 +5,7 @@ import Block
 import Browser
 import Browser.Events exposing (onAnimationFrameDelta)
 import Draggable
-import Html
+import Html exposing (Html)
 import Html.Attributes exposing (height, style, width)
 import Html.Events
 import Html.Events.Extra.Mouse as Mouse
@@ -58,6 +58,7 @@ type alias MeshSet =
 
 type alias Model =
     { size : ( Int, Int )
+    , level : Int
     , camera : Shader.OrbitCamela
     , downTime : Float
     , drag : Draggable.State String
@@ -74,6 +75,7 @@ type alias Model =
 
 type Msg
     = Reset
+    | Next
     | Delta Float
     | OnDragBy Draggable.Delta
     | DragMsg (Draggable.Msg String)
@@ -97,46 +99,60 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { size = ( 800, 600 )
-      , camera = ( 14, 0, 0 )
-      , downTime = 0
-      , drag = Draggable.init
-      , blocks =
-            let
-                count =
-                    9
-            in
-            List.range 0 count
-                |> List.map
-                    (\i ->
-                        List.range 0 count
-                            |> List.map
-                                (\j ->
-                                    let
-                                        okada =
-                                            if modBy 2 (i + j) == 0 then
-                                                Oka
+    ( initModel 1, Cmd.none )
 
-                                            else
-                                                Da
-                                    in
-                                    { id = i * 1000 + j
-                                    , okada = okada
-                                    , geo = ( vec3 (1.1 * (toFloat j - (count / 2))) (1.1 * (toFloat i - (count / 2))) 0, Mat4.makeRotate 0 (vec3 1 0 0) )
-                                    }
-                                )
-                    )
-                |> List.concat
-      , pairs = []
-      , selected = Nothing
-      , meshMap =
-            { default = { oka = okadaMesh defaultColor Oka, da = okadaMesh defaultColor Da }
-            , selected = { oka = okadaMesh selectedColor Oka, da = okadaMesh selectedColor Da }
-            , completed = { oka = okadaMesh completedColor Oka, da = okadaMesh completedColor Da }
-            }
-      }
-    , Cmd.none
-    )
+
+countAtLevel : Int -> Int
+countAtLevel level =
+    1 * (level * 2 - 1)
+
+
+initModel : Int -> Model
+initModel level =
+    { size = ( 400, 600 )
+    , level = level
+    , camera = ( 4 + toFloat (4 * level), pi / 8, pi / 16 )
+    , downTime = 0
+    , drag = Draggable.init
+    , blocks =
+        let
+            count =
+                toFloat (countAtLevel level)
+        in
+        List.range 0 (round count)
+            |> List.map
+                (\i ->
+                    List.range 0 (round count)
+                        |> List.map
+                            (\j ->
+                                let
+                                    okada =
+                                        if modBy 2 (i + j) == 0 then
+                                            Oka
+
+                                        else
+                                            Da
+                                in
+                                { id = i * 1000 + j
+                                , okada = okada
+                                , geo = ( vec3 (1.1 * (toFloat j - (count / 2))) (1.1 * (toFloat i - (count / 2))) 0, Mat4.makeRotate 0 (vec3 1 0 0) )
+                                }
+                            )
+                )
+            |> List.concat
+    , pairs = []
+    , selected = Nothing
+    , meshMap =
+        { default = { oka = okadaMesh defaultColor Oka, da = okadaMesh defaultColor Da }
+        , selected = { oka = okadaMesh selectedColor Oka, da = okadaMesh selectedColor Da }
+        , completed = { oka = okadaMesh completedColor Oka, da = okadaMesh completedColor Da }
+        }
+    }
+
+
+nextLevel : Model -> Model
+nextLevel model =
+    initModel (model.level + 1)
 
 
 okadaMesh : ColorPair -> Okada -> Mesh Shader.Vertex
@@ -167,10 +183,23 @@ update msg model =
         Reset ->
             init ()
 
-        Delta _ ->
-            ( model
-            , Cmd.none
-            )
+        Next ->
+            ( nextLevel model, Cmd.none )
+
+        Delta dt ->
+            if isLevelCompleted model && model.downTime == 0 then
+                let
+                    ( a, b, c ) =
+                        model.camera
+                in
+                ( { model | camera = ( a, b + (dt / 1000), c ) }
+                , Cmd.none
+                )
+
+            else
+                ( model
+                , Cmd.none
+                )
 
         OnDragBy ( dx, dy ) ->
             ( { model
@@ -288,6 +317,16 @@ getClickedBlock model pos =
         |> Shader.nearestClickedMesh origin direction
 
 
+isLevelCompleted : Model -> Bool
+isLevelCompleted model =
+    List.length model.blocks == 0
+
+
+isAllLevelCompleted : Model -> Bool
+isAllLevelCompleted model =
+    model.level == 1 && isLevelCompleted model
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
@@ -307,54 +346,128 @@ view model =
     in
     { title = "岡田集め - リメイク"
     , body =
-        [ Html.div []
-            [ Html.text
-                (let
-                    selected =
-                        case model.selected of
-                            Just _ ->
-                                "selected"
-
-                            Nothing ->
-                                "none"
-                 in
-                 selected ++ " | " ++ String.fromFloat model.downTime
-                )
+        [ Html.div
+            [ style "display" "flex"
+            , style "justify-content" "center"
             ]
-        , WebGL.toHtml
-            ([ width w
-             , height h
-             , style "display" "block"
-             , style "border" "1px solid black"
-             , Draggable.mouseTrigger "my-element" DragMsg
-             , Mouse.onClick (.offsetPos >> ClickMsg)
-             ]
-                ++ Draggable.touchTriggers "my-element" DragMsg
-            )
-            (entities
-                model.camera
-                perspective
-                model.meshMap.default
-                model.blocks
-                ++ Maybe.withDefault [] (Maybe.map (\b -> [ entity model.camera perspective model.meshMap.selected b ]) model.selected)
-                ++ entities
-                    model.camera
-                    perspective
-                    model.meshMap.completed
-                    (model.pairs
-                        |> List.map
-                            (\( oka, da ) -> [ oka, da ])
-                        |> List.concat
-                    )
-            )
-        , Html.div []
-            [ Html.button
-                [ Html.Events.onClick Reset
+            [ Html.div
+                [ width w
                 ]
-                [ Html.text "Reset" ]
+                [ Html.div
+                    []
+                    [ Html.text
+                        (let
+                            selected =
+                                case model.selected of
+                                    Just _ ->
+                                        "selected"
+
+                                    Nothing ->
+                                        "none"
+                         in
+                         selected ++ " | " ++ String.fromFloat model.downTime
+                        )
+                    ]
+                , WebGL.toHtml
+                    ([ width w
+                     , height h
+                     , style "display" "block"
+                     , style "border" "1px solid black"
+                     , Draggable.mouseTrigger "my-element" DragMsg
+                     , Mouse.onClick (.offsetPos >> ClickMsg)
+                     ]
+                        ++ Draggable.touchTriggers "my-element" DragMsg
+                    )
+                    (entities
+                        model.camera
+                        perspective
+                        model.meshMap.default
+                        model.blocks
+                        ++ Maybe.withDefault [] (Maybe.map (\b -> [ entity model.camera perspective model.meshMap.selected b ]) model.selected)
+                        ++ entities
+                            model.camera
+                            perspective
+                            model.meshMap.completed
+                            (model.pairs
+                                |> List.map
+                                    (\( oka, da ) -> [ oka, da ])
+                                |> List.concat
+                            )
+                    )
+                , Html.div
+                    [ Html.Attributes.style "display" "flex"
+                    , Html.Attributes.style "justify-content" "space-between"
+                    , Html.Attributes.style "margin-top" "0.2rem"
+                    ]
+                    [ Html.div []
+                        [ button
+                            [ Html.Events.onClick Reset
+                            ]
+                            [ Html.text "RESET" ]
+                        ]
+                    , Html.div
+                        [ Html.Attributes.style "display" "flex"
+                        , Html.Attributes.style "align-items" "center"
+                        ]
+                        ((if isLevelCompleted model then
+                            if isAllLevelCompleted model then
+                                [ button
+                                    [ width 100
+                                    , Html.Events.onClick Next
+                                    , Html.Attributes.style "margin" "0 1rem"
+                                    , Html.Attributes.style "background-color" "gold"
+                                    ]
+                                    [ Html.text "YOU MUST BE OKADA!!!" ]
+                                ]
+
+                            else
+                                [ button
+                                    [ width 100
+                                    , Html.Events.onClick Next
+                                    , Html.Attributes.style "margin" "0 1rem"
+                                    , Html.Attributes.style "background-color" "blue"
+                                    ]
+                                    [ Html.text "NEXT" ]
+                                ]
+
+                          else
+                            []
+                         )
+                            ++ [ Html.span
+                                    [ Html.Attributes.style "margin" "0 1rem"
+                                    ]
+                                    [ Html.text ("Lv. " ++ String.fromInt model.level) ]
+                               , Html.span
+                                    [ Html.Attributes.style "min-width" "40px"
+                                    , Html.Attributes.style "text-align" "right"
+                                    ]
+                                    [ Html.text (String.fromInt (List.length model.pairs * 2)) ]
+                               , Html.span
+                                    [ Html.Attributes.style "margin" "0 0.4rem"
+                                    ]
+                                    [ Html.text "/" ]
+                               , Html.span [] [ Html.text (String.fromInt (countAtLevel model.level * countAtLevel model.level)) ]
+                               ]
+                        )
+                    ]
+                ]
             ]
         ]
     }
+
+
+button : List (Html.Attribute msg) -> List (Html msg) -> Html msg
+button attrs children =
+    Html.button
+        ([ Html.Attributes.style "padding" "0.4rem 0.8rem"
+         , Html.Attributes.style "background-color" "#444"
+         , Html.Attributes.style "color" "white"
+         , Html.Attributes.style "border-radius" "4px"
+         , Html.Attributes.style "border" "none"
+         ]
+            ++ attrs
+        )
+        children
 
 
 entities : Shader.OrbitCamela -> Mat4 -> MeshSet -> List GeoBlock -> List WebGL.Entity
