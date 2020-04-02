@@ -7,6 +7,7 @@ import Browser.Events exposing (onAnimationFrameDelta)
 import Draggable
 import Html
 import Html.Attributes exposing (height, style, width)
+import Html.Events
 import Html.Events.Extra.Mouse as Mouse
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
@@ -62,7 +63,8 @@ type alias Model =
 
 
 type Msg
-    = Delta Float
+    = Reset
+    | Delta Float
     | OnDragBy Draggable.Delta
     | DragMsg (Draggable.Msg String)
     | ClickMsg ( Float, Float )
@@ -148,6 +150,8 @@ update msg model =
             model.camera
     in
     case msg of
+        Reset -> init ()
+
         Delta _ ->
             ( model
             , Cmd.none
@@ -266,7 +270,7 @@ getClickedBlock model pos =
         direction =
             Vec3.direction destination origin
     in
-    (model.blocks ++ Maybe.withDefault [] (Maybe.map (\b -> [b]) model.selected))
+    (model.blocks ++ Maybe.withDefault [] (Maybe.map (\b -> [ b ]) model.selected))
         |> List.map
             (\block ->
                 let
@@ -341,6 +345,12 @@ view model =
                         |> List.concat
                     )
             )
+        , Html.div []
+            [ Html.button
+                [ Html.Events.onClick Reset
+                ]
+                [ Html.text "Reset" ]
+            ]
         ]
     }
 
