@@ -1,5 +1,6 @@
 module Main exposing (main)
 
+import Animation exposing (Animation)
 import Asset
 import Block
 import Browser
@@ -26,6 +27,7 @@ type alias GeoBlock =
     { id : Int
     , okada : Okada
     , geo : Shader.Geo
+    , animation : Animation
     }
 
 
@@ -35,6 +37,38 @@ type alias OkadaPair =
 
 type alias ColorPair =
     ( Vec3, Vec3 )
+
+
+repeatAnimation : Animation.Clock -> Animation -> Animation
+repeatAnimation clock animation =
+    if Animation.isDone clock animation then
+        animation
+            |> Animation.delay (Animation.getDuration animation + Animation.getDelay animation)
+
+    else
+        animation
+
+
+rotateAnimation : Float -> Float -> Animation
+rotateAnimation clock current =
+    Animation.animation clock
+        |> Animation.from current
+        |> Animation.to (current + pi * 2)
+        |> Animation.duration 6000
+        |> Animation.delay 0
+        |> Animation.ease (\x -> x)
+
+
+animateGeo : Float -> Animation -> Shader.Geo -> Shader.Geo
+animateGeo t animation geo =
+    let
+        ( pos, rotation ) =
+            geo
+
+        next =
+            Animation.animate t animation
+    in
+    ( pos, Mat4.makeRotate next (vec3 0 1 0) )
 
 
 defaultColor : ColorPair
@@ -59,7 +93,8 @@ type alias MeshSet =
 
 
 type alias Model =
-    { size : ( Int, Int )
+    { time : Float
+    , size : ( Int, Int )
     , level : Int
     , camera : Shader.OrbitCamela
     , downTime : Float
@@ -146,7 +181,8 @@ cameraRadius level =
 
 initModel : Int -> Model
 initModel level =
-    { size = ( 400, 600 )
+    { time = 0
+    , size = ( 400, 600 )
     , level = level
     , camera = ( cameraRadius level, pi / 8, pi / 16 )
     , downTime = 0
@@ -170,6 +206,7 @@ initModel level =
                     { id = i
                     , okada = okada
                     , geo = ( vec3 0 0 0, Mat4.makeRotate 0 (vec3 1 0 0) )
+                    , animation = rotateAnimation 0 0
                     }
                 )
     , pairs = []
@@ -228,19 +265,30 @@ update msg model =
             )
 
         Delta dt ->
-            if isLevelCompleted model && model.downTime == 0 then
-                let
-                    ( a, b, c ) =
-                        model.camera
-                in
-                ( { model | camera = ( a, b - (dt / 1000), c ) }
-                , Cmd.none
-                )
+            let
+                time =
+                    model.time + dt
 
-            else
-                ( model
-                , Cmd.none
-                )
+                ( a, b, c ) =
+                    model.camera
+
+                camela =
+                    if isLevelCompleted model && model.downTime == 0 then
+                        ( a, b - (dt / 1000), c )
+
+                    else
+                        model.camera
+            in
+            ( { model
+                | time = time
+                , camera = camela
+                , blocks =
+                    model.blocks
+                        |> List.map (\block -> { block | animation = repeatAnimation time block.animation })
+                        |> List.map (\block -> { block | geo = animateGeo time block.animation block.geo })
+              }
+            , Cmd.none
+            )
 
         OnDragBy ( dx, dy ) ->
             ( { model
@@ -294,11 +342,11 @@ clickBlock model maybeBlock =
                 Nothing ->
                     { model
                         | selected = maybeBlock
-                        , blocks = List.filter (\b -> b /= block) model.blocks
+                        , blocks = List.filter (\b -> b.id /= block.id) model.blocks
                     }
 
                 Just current ->
-                    if block == current then
+                    if block.id == current.id then
                         { model
                             | selected = Nothing
                             , blocks = model.blocks ++ [ current ]
@@ -313,7 +361,7 @@ clickBlock model maybeBlock =
                             Just p ->
                                 { model
                                     | selected = Nothing
-                                    , blocks = List.filter (\b -> b /= block) model.blocks
+                                    , blocks = List.filter (\b -> b.id /= block.id) model.blocks
                                     , pairs = List.append model.pairs [ p ]
                                 }
 
@@ -402,17 +450,7 @@ view model =
                 [ Html.div
                     []
                     [ Html.text
-                        (let
-                            selected =
-                                case model.selected of
-                                    Just _ ->
-                                        "selected"
-
-                                    Nothing ->
-                                        "none"
-                         in
-                         selected ++ " | " ++ String.fromFloat model.downTime
-                        )
+                        (String.fromInt (round (model.time / 1000)) ++ " | " ++ String.fromFloat model.downTime)
                     ]
                 , WebGL.toHtml
                     ([ width w
