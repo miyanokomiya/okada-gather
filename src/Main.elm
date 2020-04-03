@@ -27,7 +27,8 @@ type alias GeoBlock =
     { id : Int
     , okada : Okada
     , geo : Shader.Geo
-    , animation : Animation
+    , rotateAnimation : Animation
+    , positionAnimation : PositionAnimation
     }
 
 
@@ -59,16 +60,73 @@ rotateAnimation clock current =
         |> Animation.ease (\x -> x)
 
 
-animateGeo : Float -> Animation -> Shader.Geo -> Shader.Geo
-animateGeo t animation geo =
+animateRotate : Float -> Animation -> Shader.Geo -> Shader.Geo
+animateRotate t animation geo =
     let
-        ( pos, rotation ) =
+        ( pos, _ ) =
             geo
 
         next =
             Animation.animate t animation
     in
     ( pos, Mat4.makeRotate next (vec3 0 1 0) )
+
+
+type alias PositionAnimation =
+    { x : Animation
+    , y : Animation
+    , z : Animation
+    }
+
+
+positionAnimation : Animation.Clock -> Float -> Vec3 -> Vec3 -> PositionAnimation
+positionAnimation clock duration from to =
+    let
+        anim =
+            Animation.animation clock
+                |> Animation.duration duration
+                |> Animation.delay 0
+                |> Animation.ease (\x -> x)
+    in
+    { x = anim |> Animation.from (Vec3.getX from) |> Animation.to (Vec3.getX to)
+    , y = anim |> Animation.from (Vec3.getY from) |> Animation.to (Vec3.getY to)
+    , z = anim |> Animation.from (Vec3.getZ from) |> Animation.to (Vec3.getZ to)
+    }
+
+
+staticPositionAnimation : Vec3 -> PositionAnimation
+staticPositionAnimation vec =
+    { x = Animation.static (Vec3.getX vec)
+    , y = Animation.static (Vec3.getY vec)
+    , z = Animation.static (Vec3.getZ vec)
+    }
+
+
+animatePosition : Float -> PositionAnimation -> Shader.Geo -> Shader.Geo
+animatePosition t animation geo =
+    let
+        ( _, rotation ) =
+            geo
+
+        next =
+            vec3 (Animation.animate t animation.x) (Animation.animate t animation.y) (Animation.animate t animation.z)
+    in
+    ( next, rotation )
+
+
+animateGeoBlock : Float -> GeoBlock -> GeoBlock
+animateGeoBlock t current =
+    let
+        rotateA =
+            repeatAnimation t current.rotateAnimation
+
+        rotated =
+            animateRotate t current.rotateAnimation current.geo
+
+        next =
+            animatePosition t current.positionAnimation rotated
+    in
+    { current | rotateAnimation = rotateA, geo = next }
 
 
 defaultColor : ColorPair
@@ -112,7 +170,7 @@ type alias Model =
 
 spreadBlock : Float -> GeoBlock -> Random.Generator GeoBlock
 spreadBlock radius block =
-    Random.map (\geo -> { block | geo = geo }) (randomGeo radius)
+    Random.map (\geo -> { block | positionAnimation = positionAnimation 0 200 (Tuple.first block.geo) (Tuple.first geo) }) (randomGeo radius)
 
 
 randomGeo : Float -> Random.Generator Shader.Geo
@@ -162,7 +220,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     let
         model =
-            initModel 2
+            initModel 1
     in
     ( model
     , generateSpreadCmd model
@@ -202,11 +260,15 @@ initModel level =
 
                             else
                                 Da
+
+                        geo =
+                            ( vec3 0 0 0, Mat4.makeRotate 0 (vec3 1 0 0) )
                     in
                     { id = i
                     , okada = okada
-                    , geo = ( vec3 0 0 0, Mat4.makeRotate 0 (vec3 1 0 0) )
-                    , animation = rotateAnimation 0 0
+                    , geo = geo
+                    , rotateAnimation = rotateAnimation 0 0
+                    , positionAnimation = staticPositionAnimation (vec3 0 0 0)
                     }
                 )
     , pairs = []
@@ -217,11 +279,6 @@ initModel level =
         , completed = { oka = okadaMesh completedColor Oka, da = okadaMesh completedColor Da }
         }
     }
-
-
-nextLevel : Model -> Model
-nextLevel model =
-    initModel (model.level + 1)
 
 
 okadaMesh : ColorPair -> Okada -> Mesh Shader.Vertex
@@ -250,8 +307,12 @@ update msg model =
     in
     case msg of
         Reset ->
-            ( initModel 1
-            , generateSpreadCmd model
+            let
+                next =
+                    initModel 1
+            in
+            ( next
+            , generateSpreadCmd next
             )
 
         Spread blocks ->
@@ -260,8 +321,12 @@ update msg model =
             )
 
         Next ->
-            ( nextLevel model
-            , generateSpreadCmd model
+            let
+                next =
+                    initModel (model.level + 1)
+            in
+            ( next
+            , generateSpreadCmd next
             )
 
         Delta dt ->
@@ -284,8 +349,16 @@ update msg model =
                 , camera = camela
                 , blocks =
                     model.blocks
-                        |> List.map (\block -> { block | animation = repeatAnimation time block.animation })
-                        |> List.map (\block -> { block | geo = animateGeo time block.animation block.geo })
+                        |> List.map (\block -> animateGeoBlock time block)
+                , selected = Maybe.map (\block -> animateGeoBlock time block) model.selected
+                , pairs =
+                    model.pairs
+                        |> List.map
+                            (\( blockA, blockB ) ->
+                                ( animateGeoBlock time blockA
+                                , animateGeoBlock time blockB
+                                )
+                            )
               }
             , Cmd.none
             )
@@ -358,11 +431,32 @@ clickBlock model maybeBlock =
                                 createPair block current
                         in
                         case pair of
-                            Just p ->
+                            Just ( blockA, blockB ) ->
+                                let
+                                    posA =
+                                        Tuple.first blockA.geo
+
+                                    posB =
+                                        Tuple.first blockB.geo
+
+                                    center =
+                                        Vec3.add posA posB |> Vec3.scale (1 / 2)
+
+                                    toA =
+                                        Vec3.add center (vec3 0 0.6 0)
+
+                                    toB =
+                                        Vec3.add center (vec3 0 -0.6 0)
+                                in
                                 { model
                                     | selected = Nothing
                                     , blocks = List.filter (\b -> b.id /= block.id) model.blocks
-                                    , pairs = List.append model.pairs [ p ]
+                                    , pairs =
+                                        List.append model.pairs
+                                            [ ( { blockA | positionAnimation = positionAnimation model.time 2000 (Tuple.first blockA.geo) toA }
+                                              , { blockB | positionAnimation = positionAnimation model.time 2000 (Tuple.first blockB.geo) toB }
+                                              )
+                                            ]
                                 }
 
                             Nothing ->
