@@ -15,6 +15,7 @@ import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 import Motion
 import Random
 import Random.Extra
+import Round
 import Shader
 import WebGL exposing (Mesh)
 
@@ -80,6 +81,7 @@ type alias MeshSet =
 
 type alias Model =
     { time : Float
+    , completedTime : Float
     , size : ( Int, Int )
     , level : Int
     , camera : Shader.OrbitCamela
@@ -176,6 +178,7 @@ cameraRadius level =
 initModel : Int -> Model
 initModel level =
     { time = 0
+    , completedTime = 0
     , size = ( 400, 600 )
     , level = level
     , camera = ( cameraRadius level, pi / 8, pi / 16 )
@@ -271,6 +274,13 @@ update msg model =
                 time =
                     model.time + dt
 
+                completedTime =
+                    if isLevelCompleted model then
+                        model.completedTime
+
+                    else
+                        time
+
                 ( a, b, c ) =
                     model.camera
 
@@ -283,6 +293,7 @@ update msg model =
             in
             ( { model
                 | time = time
+                , completedTime = completedTime
                 , camera = camela
                 , blocks =
                     model.blocks
@@ -334,19 +345,19 @@ clickBlock : Model -> Maybe GeoBlock -> Model
 clickBlock model maybeBlock =
     case maybeBlock of
         Nothing ->
-            { model
-                | selected = Nothing
-                , blocks =
-                    model.blocks
-                        ++ (case model.selected of
-                                Just b ->
-                                    [ b ]
+            model
 
-                                Nothing ->
-                                    []
-                           )
-            }
-
+        -- { model
+        --     | selected = Nothing
+        --     , blocks =
+        --         model.blocks
+        --             ++ (case model.selected of
+        --                     Just b ->
+        --                         [ b ]
+        --                     Nothing ->
+        --                         []
+        --                )
+        -- }
         Just block ->
             case model.selected of
                 Nothing ->
@@ -492,14 +503,21 @@ view model =
                 [ width w
                 ]
                 [ Html.div
-                    []
-                    [ Html.text
-                        (String.fromInt (round (model.time / 1000)) ++ " | " ++ String.fromFloat model.downTime)
+                    [ style "display" "flex"
+                    , style "justify-content" "space-between"
+                    , style "padding" "0.1rem 0.5rem"
+                    , style "font-size" "1.2rem"
+                    , style "background-color" "#333"
+                    , style "color" "#fff"
+                    ]
+                    [ Html.span [] [ Html.text ("Lv. " ++ String.fromInt model.level) ]
+                    , Html.span [] [ Html.text (timeText model.completedTime) ]
                     ]
                 , WebGL.toHtml
                     ([ width w
                      , height h
                      , style "display" "block"
+                     , style "background-color" "#eee"
                      , style "border" "1px solid black"
                      , Draggable.mouseTrigger "my-element" DragMsg
                      , Mouse.onClick (.offsetPos >> ClickMsg)
@@ -562,10 +580,6 @@ view model =
                             []
                          )
                             ++ [ Html.span
-                                    [ Html.Attributes.style "margin" "0 1rem"
-                                    ]
-                                    [ Html.text ("Lv. " ++ String.fromInt model.level) ]
-                               , Html.span
                                     [ Html.Attributes.style "min-width" "40px"
                                     , Html.Attributes.style "text-align" "right"
                                     ]
@@ -582,6 +596,11 @@ view model =
             ]
         ]
     }
+
+
+timeText : Float -> String
+timeText time =
+    Round.round 1 (time / 1000)
 
 
 button : List (Html.Attribute msg) -> List (Html msg) -> Html msg
