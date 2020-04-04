@@ -12579,7 +12579,7 @@ var $elm$html$Html$Attributes$href = function (url) {
 		_VirtualDom_noJavaScriptUri(url));
 };
 var $author$project$Main$isAllLevelCompleted = function (model) {
-	return (model.H === 10) && $author$project$Main$isLevelCompleted(model);
+	return (model.H === 8) && $author$project$Main$isLevelCompleted(model);
 };
 var $zaboco$elm_draggable$Draggable$alwaysPreventDefaultAndStopPropagation = function (msg) {
 	return {b2: msg, cj: true, cn: true};
