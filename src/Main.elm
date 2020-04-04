@@ -12,6 +12,7 @@ import Html.Events
 import Html.Events.Extra.Mouse as Mouse
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
+import Motion
 import Random
 import Random.Extra
 import Shader
@@ -28,7 +29,7 @@ type alias GeoBlock =
     , okada : Okada
     , geo : Shader.Geo
     , rotateAnimation : Animation
-    , positionAnimation : PositionAnimation
+    , positionAnimation : Motion.PositionAnimation
     }
 
 
@@ -40,91 +41,17 @@ type alias ColorPair =
     ( Vec3, Vec3 )
 
 
-repeatAnimation : Animation.Clock -> Animation -> Animation
-repeatAnimation clock animation =
-    if Animation.isDone clock animation then
-        animation
-            |> Animation.delay (Animation.getDuration animation + Animation.getDelay animation)
-
-    else
-        animation
-
-
-rotateAnimation : Float -> Float -> Animation
-rotateAnimation clock current =
-    Animation.animation clock
-        |> Animation.from current
-        |> Animation.to (current + pi * 2)
-        |> Animation.duration 6000
-        |> Animation.delay 0
-        |> Animation.ease (\x -> x)
-
-
-animateRotate : Float -> Animation -> Shader.Geo -> Shader.Geo
-animateRotate t animation geo =
-    let
-        ( pos, _ ) =
-            geo
-
-        next =
-            Animation.animate t animation
-    in
-    ( pos, Mat4.makeRotate next (vec3 0 1 0) )
-
-
-type alias PositionAnimation =
-    { x : Animation
-    , y : Animation
-    , z : Animation
-    }
-
-
-positionAnimation : Animation.Clock -> Float -> Vec3 -> Vec3 -> PositionAnimation
-positionAnimation clock duration from to =
-    let
-        anim =
-            Animation.animation clock
-                |> Animation.duration duration
-                |> Animation.delay 0
-                |> Animation.ease (\x -> x)
-    in
-    { x = anim |> Animation.from (Vec3.getX from) |> Animation.to (Vec3.getX to)
-    , y = anim |> Animation.from (Vec3.getY from) |> Animation.to (Vec3.getY to)
-    , z = anim |> Animation.from (Vec3.getZ from) |> Animation.to (Vec3.getZ to)
-    }
-
-
-staticPositionAnimation : Vec3 -> PositionAnimation
-staticPositionAnimation vec =
-    { x = Animation.static (Vec3.getX vec)
-    , y = Animation.static (Vec3.getY vec)
-    , z = Animation.static (Vec3.getZ vec)
-    }
-
-
-animatePosition : Float -> PositionAnimation -> Shader.Geo -> Shader.Geo
-animatePosition t animation geo =
-    let
-        ( _, rotation ) =
-            geo
-
-        next =
-            vec3 (Animation.animate t animation.x) (Animation.animate t animation.y) (Animation.animate t animation.z)
-    in
-    ( next, rotation )
-
-
 animateGeoBlock : Float -> GeoBlock -> GeoBlock
 animateGeoBlock t current =
     let
         rotateA =
-            repeatAnimation t current.rotateAnimation
+            Motion.repeatAnimation t current.rotateAnimation
 
         rotated =
-            animateRotate t current.rotateAnimation current.geo
+            Motion.animateRotate t current.rotateAnimation current.geo
 
         next =
-            animatePosition t current.positionAnimation rotated
+            Motion.animatePosition t current.positionAnimation rotated
     in
     { current | rotateAnimation = rotateA, geo = next }
 
@@ -170,7 +97,14 @@ type alias Model =
 
 spreadBlock : Float -> GeoBlock -> Random.Generator GeoBlock
 spreadBlock radius block =
-    Random.map (\geo -> { block | positionAnimation = positionAnimation 0 200 (Tuple.first block.geo) (Tuple.first geo) }) (randomGeo radius)
+    Random.map
+        (\( p, r ) ->
+            { block
+                | positionAnimation = Motion.positionAnimation 0 200 (Tuple.first block.geo) p
+                , geo = ( Tuple.first block.geo, r )
+            }
+        )
+        (randomGeo radius)
 
 
 randomGeo : Float -> Random.Generator Shader.Geo
@@ -267,8 +201,8 @@ initModel level =
                     { id = i
                     , okada = okada
                     , geo = geo
-                    , rotateAnimation = rotateAnimation 0 0
-                    , positionAnimation = staticPositionAnimation (vec3 0 0 0)
+                    , rotateAnimation = Motion.rotateAnimation 0 0
+                    , positionAnimation = Motion.staticPositionAnimation (vec3 0 0 0)
                     }
                 )
     , pairs = []
@@ -453,8 +387,8 @@ clickBlock model maybeBlock =
                                     , blocks = List.filter (\b -> b.id /= block.id) model.blocks
                                     , pairs =
                                         List.append model.pairs
-                                            [ ( { blockA | positionAnimation = positionAnimation model.time 2000 (Tuple.first blockA.geo) toA }
-                                              , { blockB | positionAnimation = positionAnimation model.time 2000 (Tuple.first blockB.geo) toB }
+                                            [ ( { blockA | positionAnimation = Motion.positionAnimation model.time 2000 (Tuple.first blockA.geo) toA }
+                                              , { blockB | positionAnimation = Motion.positionAnimation model.time 2000 (Tuple.first blockB.geo) toB }
                                               )
                                             ]
                                 }
