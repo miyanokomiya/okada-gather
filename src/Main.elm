@@ -10,6 +10,7 @@ import Html exposing (Html)
 import Html.Attributes exposing (height, style, width)
 import Html.Events
 import Html.Events.Extra.Mouse as Mouse
+import Html.Events.Extra.Touch as Touch
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 import Motion
@@ -515,6 +516,7 @@ view model =
                      , style "border" "1px solid black"
                      , Draggable.mouseTrigger "my-element" DragMsg
                      , Mouse.onClick (.offsetPos >> ClickMsg)
+                     , Touch.onEnd (ClickMsg << touchCoordinates)
                      ]
                         ++ Draggable.touchTriggers "my-element" DragMsg
                     )
@@ -602,6 +604,11 @@ view model =
         ]
     }
 
+touchCoordinates : Touch.Event -> ( Float, Float )
+touchCoordinates touchEvent =
+    List.head touchEvent.changedTouches
+        |> Maybe.map .clientPos
+        |> Maybe.withDefault ( 0, 0 )
 
 timeText : Float -> String
 timeText time =
