@@ -488,7 +488,7 @@ view model =
         perspective =
             getPerspective model.size
     in
-    { title = "岡田集め - リメイク"
+    { title = "岡田集め - リバイバル"
     , body =
         [ Html.div
             [ style "display" "flex"
