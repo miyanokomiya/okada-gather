@@ -470,7 +470,7 @@ isLevelCompleted model =
 
 isAllLevelCompleted : Model -> Bool
 isAllLevelCompleted model =
-    model.level == 10 && isLevelCompleted model
+    model.level == 8 && isLevelCompleted model
 
 
 subscriptions : Model -> Sub Msg
