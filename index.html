@@ -12413,6 +12413,7 @@ var $author$project$Main$ClickMsg = function (a) {
 };
 var $author$project$Main$Next = {$: 2};
 var $author$project$Main$Reset = {$: 0};
+var $elm$html$Html$a = _VirtualDom_node('a');
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
@@ -12575,6 +12576,20 @@ var $elm$html$Html$Attributes$height = function (n) {
 		_VirtualDom_attribute,
 		'height',
 		$elm$core$String$fromInt(n));
+};
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
 };
 var $author$project$Main$isAllLevelCompleted = function (model) {
 	return (model.D === 10) && $author$project$Main$isLevelCompleted(model);
@@ -12742,7 +12757,9 @@ var $mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$onWithOptions = F3(
 				$mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$eventDecoder));
 	});
 var $mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$onClick = A2($mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$onWithOptions, 'click', $mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$defaultOptions);
+var $elm$html$Html$Attributes$rel = _VirtualDom_attribute('rel');
 var $elm$html$Html$span = _VirtualDom_node('span');
+var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$core$Basics$ge = _Utils_ge;
@@ -13344,6 +13361,28 @@ var $author$project$Main$view = function (model) {
 																$author$project$Main$countAtLevel(model.D) * $author$project$Main$countAtLevel(model.D)))
 														]))
 												])))
+									])),
+								A2(
+								$elm$html$Html$div,
+								_List_fromArray(
+									[
+										A2($elm$html$Html$Attributes$style, 'text-align', 'center')
+									]),
+								_List_fromArray(
+									[
+										A2(
+										$elm$html$Html$a,
+										_List_fromArray(
+											[
+												$elm$html$Html$Attributes$href('https://github.com/miyanokomiya/okada-gather'),
+												$elm$html$Html$Attributes$target('_blank'),
+												$elm$html$Html$Attributes$rel('noopener'),
+												A2($elm$html$Html$Attributes$style, 'font-size', '0.8rem')
+											]),
+										_List_fromArray(
+											[
+												$elm$html$Html$text('repository')
+											]))
 									]))
 							]))
 					]))
