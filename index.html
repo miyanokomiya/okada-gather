@@ -2718,7 +2718,7 @@ var _VirtualDom_mapEventTuple = F2(function(func, tuple)
 var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
-		E: func(record.E),
+		D: func(record.D),
 		aL: record.aL,
 		aH: record.aH
 	}
@@ -2988,7 +2988,7 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 		// 3 = Custom
 
 		var value = result.a;
-		var message = !tag ? value : tag < 3 ? value.a : value.E;
+		var message = !tag ? value : tag < 3 ? value.a : value.D;
 		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.aL;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
@@ -7232,7 +7232,7 @@ var $author$project$Main$generateSpreadCmd = function (model) {
 			function (b) {
 				return A2(
 					$author$project$Main$spreadBlock,
-					$author$project$Main$cameraRadius(model.D) * 0.2,
+					$author$project$Main$cameraRadius(model.I) * 0.2,
 					b);
 			},
 			model.h));
@@ -7242,8 +7242,9 @@ var $author$project$Main$Oka = 0;
 var $author$project$Main$completedColor = _Utils_Tuple2(
 	A3($elm_explorations$linear_algebra$Math$Vector3$vec3, 255, 215, 0),
 	A3($elm_explorations$linear_algebra$Math$Vector3$vec3, 255, 165, 0));
+var $elm$core$Basics$pow = _Basics_pow;
 var $author$project$Main$countAtLevel = function (level) {
-	return 1 * ((level * 2) - 1);
+	return A2($elm$core$Basics$pow, 2, level);
 };
 var $author$project$Main$defaultColor = _Utils_Tuple2(
 	A3($elm_explorations$linear_algebra$Math$Vector3$vec3, 60, 179, 113),
@@ -11007,7 +11008,7 @@ var $author$project$Main$initModel = function (level) {
 						}
 					};
 				},
-				A2($elm$core$List$range, 1, 2 * (count + 1)));
+				A2($elm$core$List$range, 1, count));
 		}(),
 		m: _Utils_Tuple3(
 			$author$project$Main$cameraRadius(level),
@@ -11016,7 +11017,7 @@ var $author$project$Main$initModel = function (level) {
 		V: 0,
 		B: 0,
 		aC: $zaboco$elm_draggable$Draggable$init,
-		D: level,
+		I: level,
 		Z: {
 			aP: {
 				W: A2($author$project$Main$okadaMesh, $author$project$Main$completedColor, 1),
@@ -11031,7 +11032,7 @@ var $author$project$Main$initModel = function (level) {
 				_: A2($author$project$Main$okadaMesh, $author$project$Main$selectedColor, 0)
 			}
 		},
-		F: _List_Nil,
+		E: _List_Nil,
 		p: $elm$core$Maybe$Nothing,
 		Q: _Utils_Tuple2(400, 600),
 		ae: 0
@@ -11833,9 +11834,9 @@ var $author$project$Main$clickBlock = F2(
 										return !_Utils_eq(b.C, block.C);
 									},
 									model.h),
-								F: A2(
+								E: A2(
 									$elm$core$List$append,
-									model.F,
+									model.E,
 									_List_fromArray(
 										[pairWithAnimation])),
 								p: $elm$core$Maybe$Nothing
@@ -12320,7 +12321,7 @@ var $author$project$Main$update = F2(
 						{h: blocks}),
 					$elm$core$Platform$Cmd$none);
 			case 2:
-				var next = $author$project$Main$initModel(model.D + 1);
+				var next = $author$project$Main$initModel(model.I + 1);
 				return _Utils_Tuple2(
 					next,
 					$author$project$Main$generateSpreadCmd(next));
@@ -12345,7 +12346,7 @@ var $author$project$Main$update = F2(
 								model.h),
 							m: camela,
 							V: completedTime,
-							F: A2(
+							E: A2(
 								$elm$core$List$map,
 								function (_v4) {
 									var blockA = _v4.a;
@@ -12354,7 +12355,7 @@ var $author$project$Main$update = F2(
 										A2($author$project$Main$animateGeoBlock, time, blockA),
 										A2($author$project$Main$animateGeoBlock, time, blockB));
 								},
-								model.F),
+								model.E),
 							p: A2(
 								$elm$core$Maybe$map,
 								function (block) {
@@ -12592,10 +12593,10 @@ var $elm$html$Html$Attributes$href = function (url) {
 		_VirtualDom_noJavaScriptUri(url));
 };
 var $author$project$Main$isAllLevelCompleted = function (model) {
-	return (model.D === 10) && $author$project$Main$isLevelCompleted(model);
+	return (model.I === 10) && $author$project$Main$isLevelCompleted(model);
 };
 var $zaboco$elm_draggable$Draggable$alwaysPreventDefaultAndStopPropagation = function (msg) {
-	return {E: msg, aH: true, aL: true};
+	return {D: msg, aH: true, aL: true};
 };
 var $zaboco$elm_draggable$Internal$StartDragging = F2(
 	function (a, b) {
@@ -12749,7 +12750,7 @@ var $mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$onWithOptions = F3(
 				$elm$json$Json$Decode$map,
 				function (ev) {
 					return {
-						E: tag(ev),
+						D: tag(ev),
 						aH: options.aH,
 						aL: options.aL
 					};
@@ -13095,7 +13096,7 @@ var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$onWithOptions = F3(
 				$elm$json$Json$Decode$map,
 				function (ev) {
 					return {
-						E: tag(ev),
+						D: tag(ev),
 						aH: options.aH,
 						aL: options.aL
 					};
@@ -13200,7 +13201,7 @@ var $author$project$Main$view = function (model) {
 										_List_fromArray(
 											[
 												$elm$html$Html$text(
-												'Lv. ' + $elm$core$String$fromInt(model.D))
+												'Lv. ' + $elm$core$String$fromInt(model.I))
 											])),
 										A2(
 										$elm$html$Html$span,
@@ -13260,7 +13261,7 @@ var $author$project$Main$view = function (model) {
 														return _List_fromArray(
 															[oka, da]);
 													},
-													model.F)))))),
+													model.E)))))),
 								A2(
 								$elm$html$Html$div,
 								_List_fromArray(
@@ -13339,7 +13340,7 @@ var $author$project$Main$view = function (model) {
 														[
 															$elm$html$Html$text(
 															$elm$core$String$fromInt(
-																$elm$core$List$length(model.F) * 2))
+																$elm$core$List$length(model.E) * 2))
 														])),
 													A2(
 													$elm$html$Html$span,
@@ -13358,7 +13359,7 @@ var $author$project$Main$view = function (model) {
 														[
 															$elm$html$Html$text(
 															$elm$core$String$fromInt(
-																$author$project$Main$countAtLevel(model.D) * $author$project$Main$countAtLevel(model.D)))
+																$author$project$Main$countAtLevel(model.I)))
 														]))
 												])))
 									])),
