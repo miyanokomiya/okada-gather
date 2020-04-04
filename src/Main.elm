@@ -11,9 +11,11 @@ import Html.Attributes exposing (height, style, width)
 import Html.Events
 import Html.Events.Extra.Mouse as Mouse
 import Html.Events.Extra.Touch as Touch
+import Json.Decode as Decode exposing (Decoder)
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 import Motion
+import Pointer
 import Random
 import Random.Extra
 import Round
@@ -508,34 +510,39 @@ view model =
                     [ Html.span [] [ Html.text ("Lv. " ++ String.fromInt model.level) ]
                     , Html.span [] [ Html.text (timeText model.completedTime) ]
                     ]
-                , WebGL.toHtml
-                    ([ width w
-                     , height h
-                     , style "display" "block"
-                     , style "background-color" "#eee"
-                     , style "border" "1px solid black"
-                     , Draggable.mouseTrigger "my-element" DragMsg
-                     , Mouse.onClick (.offsetPos >> ClickMsg)
-                     , Touch.onEnd (ClickMsg << touchCoordinates)
-                     ]
-                        ++ Draggable.touchTriggers "my-element" DragMsg
-                    )
-                    (entities
-                        model.camera
-                        perspective
-                        model.meshMap.default
-                        model.blocks
-                        ++ Maybe.withDefault [] (Maybe.map (\b -> [ entity model.camera perspective model.meshMap.selected b ]) model.selected)
-                        ++ entities
+                , Html.div
+                    [ width w
+                    , height h
+                    , Mouse.onClick (.offsetPos >> ClickMsg)
+                    , Pointer.onTouchEndWithPosition ClickMsg
+                    ]
+                    [ WebGL.toHtml
+                        ([ width w
+                         , height h
+                         , style "display" "block"
+                         , style "background-color" "#eee"
+                         , style "border" "1px solid black"
+                         , Draggable.mouseTrigger "my-element" DragMsg
+                         ]
+                            ++ Draggable.touchTriggers "my-element" DragMsg
+                        )
+                        (entities
                             model.camera
                             perspective
-                            model.meshMap.completed
-                            (model.pairs
-                                |> List.map
-                                    (\( oka, da ) -> [ oka, da ])
-                                |> List.concat
-                            )
-                    )
+                            model.meshMap.default
+                            model.blocks
+                            ++ Maybe.withDefault [] (Maybe.map (\b -> [ entity model.camera perspective model.meshMap.selected b ]) model.selected)
+                            ++ entities
+                                model.camera
+                                perspective
+                                model.meshMap.completed
+                                (model.pairs
+                                    |> List.map
+                                        (\( oka, da ) -> [ oka, da ])
+                                    |> List.concat
+                                )
+                        )
+                    ]
                 , Html.div
                     [ Html.Attributes.style "display" "flex"
                     , Html.Attributes.style "justify-content" "space-between"
@@ -604,11 +611,6 @@ view model =
         ]
     }
 
-touchCoordinates : Touch.Event -> ( Float, Float )
-touchCoordinates touchEvent =
-    List.head touchEvent.changedTouches
-        |> Maybe.map .clientPos
-        |> Maybe.withDefault ( 0, 0 )
 
 timeText : Float -> String
 timeText time =
