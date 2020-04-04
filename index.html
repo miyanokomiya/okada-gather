@@ -798,11 +798,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.aK._ === region.aU._)
+	if (region.aK.Y === region.aU.Y)
 	{
-		return 'on line ' + region.aK._;
+		return 'on line ' + region.aK.Y;
 	}
-	return 'on lines ' + region.aK._ + ' through ' + region.aU._;
+	return 'on lines ' + region.aK.Y + ' through ' + region.aU.Y;
 }
 
 
@@ -6998,7 +6998,7 @@ var $elm$random$Random$generate = F2(
 var $mgold$elm_animation$Animation$A = $elm$core$Basics$identity;
 var $mgold$elm_animation$Animation$AnimRecord = F7(
 	function (start, delay_, dos, ramp, ease_, from_, to_) {
-		return {k: delay_, g: dos, x: ease_, d: from_, v: ramp, aK: start, a: to_};
+		return {j: delay_, g: dos, x: ease_, d: from_, v: ramp, aK: start, a: to_};
 	});
 var $mgold$elm_animation$Animation$Duration = function (a) {
 	return {$: 0, a: a};
@@ -7017,7 +7017,7 @@ var $mgold$elm_animation$Animation$delay = F2(
 		var a = _v0;
 		return _Utils_update(
 			a,
-			{k: x});
+			{j: x});
 	});
 var $mgold$elm_animation$Animation$duration = F2(
 	function (x, _v0) {
@@ -7158,7 +7158,7 @@ var $author$project$Main$randomGeo = function (radius) {
 			function (rad, axis, pos) {
 				return _Utils_Tuple2(
 					pos,
-					{W: axis, H: rad});
+					{U: axis, L: rad});
 			}),
 		A2($elm$random$Random$float, 0, 2 * $elm$core$Basics$pi),
 		$author$project$Main$randomVec3(1),
@@ -7180,9 +7180,9 @@ var $author$project$Main$spreadBlock = F2(
 				return _Utils_update(
 					block,
 					{
-						i: _Utils_Tuple2(block.i.a, r),
-						Q: A4($author$project$Motion$positionAnimation, 0, 200, block.i.a, p),
-						R: $author$project$Motion$staticRotateAnimation(r.H)
+						k: _Utils_Tuple2(block.k.a, r),
+						aa: A4($author$project$Motion$positionAnimation, 0, 200, block.k.a, p),
+						ab: $author$project$Motion$staticRotateAnimation(r.L)
 					});
 			},
 			$author$project$Main$randomGeo(radius));
@@ -10991,19 +10991,19 @@ var $author$project$Main$initModel = function (level) {
 					var geo = _Utils_Tuple2(
 						A3($elm_explorations$linear_algebra$Math$Vector3$vec3, 0, 0, 0),
 						{
-							W: A3($elm_explorations$linear_algebra$Math$Vector3$vec3, 1, 0, 0),
-							H: 0
+							U: A3($elm_explorations$linear_algebra$Math$Vector3$vec3, 1, 0, 0),
+							L: 0
 						});
 					return {
-						i: geo,
+						k: geo,
 						C: i,
-						K: okada,
-						Q: $author$project$Motion$staticPositionAnimation(
+						J: okada,
+						aa: $author$project$Motion$staticPositionAnimation(
 							A3($elm_explorations$linear_algebra$Math$Vector3$vec3, 0, 0, 0)),
-						R: $author$project$Motion$staticRotateAnimation(0),
+						ab: $author$project$Motion$staticRotateAnimation(0),
 						N: {
-							W: A3($elm_explorations$linear_algebra$Math$Vector3$vec3, 0, 1, 0),
-							H: 0
+							U: A3($elm_explorations$linear_algebra$Math$Vector3$vec3, 0, 1, 0),
+							L: 0
 						}
 					};
 				},
@@ -11013,27 +11013,27 @@ var $author$project$Main$initModel = function (level) {
 			$author$project$Main$cameraRadius(level),
 			$elm$core$Basics$pi / 8,
 			$elm$core$Basics$pi / 16),
-		X: 0,
+		V: 0,
 		B: 0,
 		aC: $zaboco$elm_draggable$Draggable$init,
 		D: level,
-		aa: {
+		Z: {
 			aP: {
-				Y: A2($author$project$Main$okadaMesh, $author$project$Main$completedColor, 1),
-				ab: A2($author$project$Main$okadaMesh, $author$project$Main$completedColor, 0)
+				W: A2($author$project$Main$okadaMesh, $author$project$Main$completedColor, 1),
+				_: A2($author$project$Main$okadaMesh, $author$project$Main$completedColor, 0)
 			},
 			aS: {
-				Y: A2($author$project$Main$okadaMesh, $author$project$Main$defaultColor, 1),
-				ab: A2($author$project$Main$okadaMesh, $author$project$Main$defaultColor, 0)
+				W: A2($author$project$Main$okadaMesh, $author$project$Main$defaultColor, 1),
+				_: A2($author$project$Main$okadaMesh, $author$project$Main$defaultColor, 0)
 			},
 			p: {
-				Y: A2($author$project$Main$okadaMesh, $author$project$Main$selectedColor, 1),
-				ab: A2($author$project$Main$okadaMesh, $author$project$Main$selectedColor, 0)
+				W: A2($author$project$Main$okadaMesh, $author$project$Main$selectedColor, 1),
+				_: A2($author$project$Main$okadaMesh, $author$project$Main$selectedColor, 0)
 			}
 		},
 		F: _List_Nil,
 		p: $elm$core$Maybe$Nothing,
-		S: _Utils_Tuple2(400, 600),
+		Q: _Utils_Tuple2(400, 600),
 		ae: 0
 	};
 };
@@ -11647,7 +11647,7 @@ var $mgold$elm_animation$Animation$dur = F3(
 var $mgold$elm_animation$Animation$animate = F2(
 	function (clock, _v0) {
 		var start = _v0.aK;
-		var delay_ = _v0.k;
+		var delay_ = _v0.j;
 		var dos = _v0.g;
 		var ramp = _v0.v;
 		var from_ = _v0.d;
@@ -11689,21 +11689,21 @@ var $author$project$Motion$animateRotate = F3(
 			pos,
 			_Utils_update(
 				rotation,
-				{H: next}));
+				{L: next}));
 	});
 var $author$project$Main$animateGeoBlock = F2(
 	function (t, current) {
-		var rotated = A3($author$project$Motion$animateRotate, t, current.R, current.i);
-		var nextTurning = {W: current.N.W, H: current.N.H + ($elm$core$Basics$pi / 300)};
-		var nextGeo = A3($author$project$Motion$animatePosition, t, current.Q, rotated);
+		var rotated = A3($author$project$Motion$animateRotate, t, current.ab, current.k);
+		var nextTurning = {U: current.N.U, L: current.N.L + ($elm$core$Basics$pi / 300)};
+		var nextGeo = A3($author$project$Motion$animatePosition, t, current.aa, rotated);
 		return _Utils_update(
 			current,
-			{i: nextGeo, N: nextTurning});
+			{k: nextGeo, N: nextTurning});
 	});
 var $author$project$Main$createPair = F2(
 	function (a, b) {
-		return ((!a.K) && (b.K === 1)) ? $elm$core$Maybe$Just(
-			_Utils_Tuple2(a, b)) : (((a.K === 1) && (!b.K)) ? $elm$core$Maybe$Just(
+		return ((!a.J) && (b.J === 1)) ? $elm$core$Maybe$Just(
+			_Utils_Tuple2(a, b)) : (((a.J === 1) && (!b.J)) ? $elm$core$Maybe$Just(
 			_Utils_Tuple2(b, a)) : $elm$core$Maybe$Nothing);
 	});
 var $elm$core$List$filter = F2(
@@ -11718,6 +11718,14 @@ var $elm$core$List$filter = F2(
 			list);
 	});
 var $elm_explorations$linear_algebra$Math$Vector3$add = _MJS_v3add;
+var $elm$core$Tuple$mapBoth = F3(
+	function (funcA, funcB, _v0) {
+		var x = _v0.a;
+		var y = _v0.b;
+		return _Utils_Tuple2(
+			funcA(x),
+			funcB(y));
+	});
 var $author$project$Motion$rotateAnimation = F4(
 	function (clock, duration, from, to) {
 		return A2(
@@ -11747,8 +11755,18 @@ var $author$project$Main$makePairAnimation = F2(
 	function (clock, _v0) {
 		var blockA = _v0.a;
 		var blockB = _v0.b;
-		var posB = blockB.i.a;
-		var posA = blockA.i.a;
+		var posB = blockB.k.a;
+		var posA = blockA.k.a;
+		var map = function (_v1) {
+			var b = _v1.a;
+			var to = _v1.b;
+			return _Utils_update(
+				b,
+				{
+					aa: A4($author$project$Motion$positionAnimation, clock, 500, b.k.a, to),
+					ab: A4($author$project$Motion$rotateAnimation, clock, 500, b.k.b.L, $elm$core$Basics$pi * 4)
+				});
+		};
 		var center = A2(
 			$elm_explorations$linear_algebra$Math$Vector3$scale,
 			1 / 2,
@@ -11761,19 +11779,13 @@ var $author$project$Main$makePairAnimation = F2(
 			$elm_explorations$linear_algebra$Math$Vector3$add,
 			center,
 			A3($elm_explorations$linear_algebra$Math$Vector3$vec3, 0, -0.6, 0));
-		return _Utils_Tuple2(
-			_Utils_update(
-				blockA,
-				{
-					Q: A4($author$project$Motion$positionAnimation, clock, 500, blockA.i.a, toA),
-					R: A4($author$project$Motion$rotateAnimation, clock, 500, blockA.i.b.H, 0)
-				}),
-			_Utils_update(
-				blockB,
-				{
-					Q: A4($author$project$Motion$positionAnimation, clock, 500, blockB.i.a, toB),
-					R: A4($author$project$Motion$rotateAnimation, clock, 500, blockB.i.b.H, 0)
-				}));
+		return A3(
+			$elm$core$Tuple$mapBoth,
+			map,
+			map,
+			_Utils_Tuple2(
+				_Utils_Tuple2(blockA, toA),
+				_Utils_Tuple2(blockB, toB)));
 	});
 var $elm$core$Basics$neq = _Utils_notEqual;
 var $author$project$Main$clickBlock = F2(
@@ -11867,10 +11879,10 @@ var $elm_explorations$linear_algebra$Math$Matrix4$makeTranslate = _MJS_m4x4makeT
 var $elm_explorations$linear_algebra$Math$Matrix4$mul = _MJS_m4x4mul;
 var $elm_explorations$linear_algebra$Math$Matrix4$makeRotate = _MJS_m4x4makeRotate;
 var $author$project$Shader$rotationToMat = function (r) {
-	return A2($elm_explorations$linear_algebra$Math$Matrix4$makeRotate, r.H, r.W);
+	return A2($elm_explorations$linear_algebra$Math$Matrix4$makeRotate, r.L, r.U);
 };
 var $author$project$Main$blockTransFormMat = function (block) {
-	var _v0 = block.i;
+	var _v0 = block.k;
 	var p = _v0.a;
 	var r = _v0.b;
 	return A2(
@@ -12130,7 +12142,7 @@ var $author$project$Main$getClickedBlock = F2(
 		var destination = A3(
 			$author$project$Shader$getClickPosition,
 			model.m,
-			$author$project$Main$getPerspective(model.S),
+			$author$project$Main$getPerspective(model.Q),
 			pos);
 		var direction = A2($elm_explorations$linear_algebra$Math$Vector3$direction, destination, origin);
 		return A3(
@@ -12287,7 +12299,7 @@ var $zaboco$elm_draggable$Draggable$update = F3(
 	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
-		var _v0 = model.S;
+		var _v0 = model.Q;
 		var width = _v0.a;
 		var height = _v0.b;
 		var _v1 = model.m;
@@ -12315,7 +12327,7 @@ var $author$project$Main$update = F2(
 			case 3:
 				var dt = msg.a;
 				var time = model.ae + dt;
-				var completedTime = $author$project$Main$isLevelCompleted(model) ? model.X : time;
+				var completedTime = $author$project$Main$isLevelCompleted(model) ? model.V : time;
 				var _v3 = model.m;
 				var a = _v3.a;
 				var b = _v3.b;
@@ -12332,7 +12344,7 @@ var $author$project$Main$update = F2(
 								},
 								model.h),
 							m: camela,
-							X: completedTime,
+							V: completedTime,
 							F: A2(
 								$elm$core$List$map,
 								function (_v4) {
@@ -12512,7 +12524,7 @@ var $author$project$Shader$fragmentShader = {
 };
 var $author$project$Main$toMesh = F2(
 	function (set, block) {
-		return (!block.K) ? set.ab : set.Y;
+		return (!block.J) ? set._ : set.W;
 	});
 var $author$project$Shader$uniforms = F4(
 	function (camera, perspective, position, rotation) {
@@ -12531,7 +12543,7 @@ var $author$project$Shader$vertexShader = {
 };
 var $author$project$Main$entity = F4(
 	function (camera, perspective, set, block) {
-		var _v0 = block.i;
+		var _v0 = block.k;
 		var p = _v0.a;
 		var r = _v0.b;
 		return A4(
@@ -13128,8 +13140,8 @@ var $elm$html$Html$Attributes$width = function (n) {
 		$elm$core$String$fromInt(n));
 };
 var $author$project$Main$view = function (model) {
-	var perspective = $author$project$Main$getPerspective(model.S);
-	var _v0 = model.S;
+	var perspective = $author$project$Main$getPerspective(model.Q);
+	var _v0 = model.Q;
 	var w = _v0.a;
 	var h = _v0.b;
 	return {
@@ -13179,7 +13191,7 @@ var $author$project$Main$view = function (model) {
 										_List_fromArray(
 											[
 												$elm$html$Html$text(
-												$author$project$Main$timeText(model.X))
+												$author$project$Main$timeText(model.V))
 											]))
 									])),
 								A2(
@@ -13203,7 +13215,7 @@ var $author$project$Main$view = function (model) {
 										]),
 									A2($zaboco$elm_draggable$Draggable$touchTriggers, 'my-element', $author$project$Main$DragMsg)),
 								_Utils_ap(
-									A4($author$project$Main$entities, model.m, perspective, model.aa.aS, model.h),
+									A4($author$project$Main$entities, model.m, perspective, model.Z.aS, model.h),
 									_Utils_ap(
 										A2(
 											$elm$core$Maybe$withDefault,
@@ -13213,7 +13225,7 @@ var $author$project$Main$view = function (model) {
 												function (b) {
 													return _List_fromArray(
 														[
-															A4($author$project$Main$entity, model.m, perspective, model.aa.p, b)
+															A4($author$project$Main$entity, model.m, perspective, model.Z.p, b)
 														]);
 												},
 												model.p)),
@@ -13221,7 +13233,7 @@ var $author$project$Main$view = function (model) {
 											$author$project$Main$entities,
 											model.m,
 											perspective,
-											model.aa.aP,
+											model.Z.aP,
 											$elm$core$List$concat(
 												A2(
 													$elm$core$List$map,
