@@ -176,7 +176,7 @@ init _ =
 
 countAtLevel : Int -> Int
 countAtLevel level =
-    1 * (level * 2 - 1)
+    2 ^ level
 
 
 cameraRadius : Int -> Float
@@ -198,7 +198,7 @@ initModel level =
             count =
                 countAtLevel level
         in
-        List.range 1 (2 * (count + 1))
+        List.range 1 count
             |> List.map
                 (\i ->
                     let
@@ -582,7 +582,7 @@ view model =
                                     [ Html.Attributes.style "margin" "0 0.4rem"
                                     ]
                                     [ Html.text "/" ]
-                               , Html.span [] [ Html.text (String.fromInt (countAtLevel model.level * countAtLevel model.level)) ]
+                               , Html.span [] [ Html.text (String.fromInt (countAtLevel model.level)) ]
                                ]
                         )
                     ]
