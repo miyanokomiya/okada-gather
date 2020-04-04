@@ -43,6 +43,15 @@ type alias ColorPair =
     ( Vec3, Vec3 )
 
 
+blockTransFormMat : GeoBlock -> Mat4
+blockTransFormMat block =
+    let
+        ( p, r ) =
+            block.geo
+    in
+    Mat4.mul (Mat4.makeTranslate p) (Mat4.mul (Shader.rotationToMat r) (Shader.rotationToMat block.turning))
+
+
 animateGeoBlock : Float -> GeoBlock -> GeoBlock
 animateGeoBlock t current =
     let
@@ -347,17 +356,6 @@ clickBlock model maybeBlock =
         Nothing ->
             model
 
-        -- { model
-        --     | selected = Nothing
-        --     , blocks =
-        --         model.blocks
-        --             ++ (case model.selected of
-        --                     Just b ->
-        --                         [ b ]
-        --                     Nothing ->
-        --                         []
-        --                )
-        -- }
         Just block ->
             case model.selected of
                 Nothing ->
@@ -452,11 +450,8 @@ getClickedBlock model pos =
         |> List.map
             (\block ->
                 let
-                    ( p, r ) =
-                        block.geo
-
                     mat =
-                        Mat4.mul (Mat4.makeTranslate p) (Mat4.makeRotate r.radian r.axis)
+                        blockTransFormMat block
 
                     triangles =
                         List.map (\( v0, v1, v2 ) -> ( Mat4.transform mat v0, Mat4.transform mat v1, Mat4.transform mat v2 )) (List.concat Asset.cube)
