@@ -8,6 +8,7 @@ module Motion exposing
     , repeatAnimation
     , rotateAnimation
     , staticPositionAnimation
+    , staticRotateAnimation
     )
 
 import Animation exposing (Animation)
@@ -27,14 +28,19 @@ repeatAnimation clock animation =
         animation
 
 
-rotateAnimation : Float -> Float -> Animation
-rotateAnimation clock current =
+rotateAnimation : Float -> Float -> Float -> Float -> Animation
+rotateAnimation clock duration from to =
     Animation.animation clock
-        |> Animation.from current
-        |> Animation.to (current + pi * 2)
-        |> Animation.duration 6000
+        |> Animation.from from
+        |> Animation.to to
+        |> Animation.duration duration
         |> Animation.delay 0
         |> Animation.ease (\x -> x)
+
+
+staticRotateAnimation : Float -> Animation
+staticRotateAnimation current =
+    Animation.static current
 
 
 animateRotate : Float -> Animation -> Shader.Geo -> Shader.Geo
@@ -46,7 +52,8 @@ animateRotate t animation geo =
         next =
             Animation.animate t animation
     in
-    ( pos, Mat4.mul rotation (Mat4.makeRotate 0.01 (vec3 0 1 0)) )
+    -- ( pos, rotation)
+    ( pos, { rotation | radian = next } )
 
 
 type alias PositionAnimation =

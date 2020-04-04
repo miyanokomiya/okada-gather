@@ -28,6 +28,7 @@ type alias GeoBlock =
     { id : Int
     , okada : Okada
     , geo : Shader.Geo
+    , turning : Shader.Rotation
     , rotateAnimation : Animation
     , positionAnimation : Motion.PositionAnimation
     }
@@ -44,16 +45,16 @@ type alias ColorPair =
 animateGeoBlock : Float -> GeoBlock -> GeoBlock
 animateGeoBlock t current =
     let
-        rotateA =
-            Motion.repeatAnimation t current.rotateAnimation
-
         rotated =
             Motion.animateRotate t current.rotateAnimation current.geo
 
-        next =
+        nextGeo =
             Motion.animatePosition t current.positionAnimation rotated
+
+        nextTurning =
+            { radian = current.turning.radian + pi / 300, axis = current.turning.axis }
     in
-    { current | rotateAnimation = rotateA, geo = next }
+    { current | geo = nextGeo, turning = nextTurning }
 
 
 defaultColor : ColorPair
@@ -101,6 +102,7 @@ spreadBlock radius block =
         (\( p, r ) ->
             { block
                 | positionAnimation = Motion.positionAnimation 0 200 (Tuple.first block.geo) p
+                , rotateAnimation = Motion.staticRotateAnimation r.radian
                 , geo = ( Tuple.first block.geo, r )
             }
         )
@@ -110,7 +112,7 @@ spreadBlock radius block =
 randomGeo : Float -> Random.Generator Shader.Geo
 randomGeo radius =
     Random.map3
-        (\rad axis pos -> ( pos, Mat4.makeRotate rad axis ))
+        (\rad axis pos -> ( pos, { radian = rad, axis = axis } ))
         (Random.float 0 (2 * pi))
         (randomVec3 1)
         (randomVec3 radius)
@@ -196,12 +198,13 @@ initModel level =
                                 Da
 
                         geo =
-                            ( vec3 0 0 0, Mat4.makeRotate 0 (vec3 1 0 0) )
+                            ( vec3 0 0 0, { radian = 0, axis = vec3 1 0 0 } )
                     in
                     { id = i
                     , okada = okada
                     , geo = geo
-                    , rotateAnimation = Motion.rotateAnimation 0 0
+                    , turning = { radian = 0, axis = vec3 0 1 0 }
+                    , rotateAnimation = Motion.staticRotateAnimation 0
                     , positionAnimation = Motion.staticPositionAnimation (vec3 0 0 0)
                     }
                 )
@@ -361,40 +364,53 @@ clickBlock model maybeBlock =
 
                     else
                         let
-                            pair =
+                            maybePair =
                                 createPair block current
                         in
-                        case pair of
-                            Just ( blockA, blockB ) ->
+                        case maybePair of
+                            Just pair ->
                                 let
-                                    posA =
-                                        Tuple.first blockA.geo
-
-                                    posB =
-                                        Tuple.first blockB.geo
-
-                                    center =
-                                        Vec3.add posA posB |> Vec3.scale (1 / 2)
-
-                                    toA =
-                                        Vec3.add center (vec3 0 0.6 0)
-
-                                    toB =
-                                        Vec3.add center (vec3 0 -0.6 0)
+                                    pairWithAnimation =
+                                        makePairAnimation model.time pair
                                 in
                                 { model
                                     | selected = Nothing
                                     , blocks = List.filter (\b -> b.id /= block.id) model.blocks
                                     , pairs =
-                                        List.append model.pairs
-                                            [ ( { blockA | positionAnimation = Motion.positionAnimation model.time 2000 (Tuple.first blockA.geo) toA }
-                                              , { blockB | positionAnimation = Motion.positionAnimation model.time 2000 (Tuple.first blockB.geo) toB }
-                                              )
-                                            ]
+                                        List.append model.pairs [ pairWithAnimation ]
                                 }
 
                             Nothing ->
                                 model
+
+
+makePairAnimation : Animation.Clock -> OkadaPair -> OkadaPair
+makePairAnimation clock ( blockA, blockB ) =
+    let
+        posA =
+            Tuple.first blockA.geo
+
+        posB =
+            Tuple.first blockB.geo
+
+        center =
+            Vec3.add posA posB |> Vec3.scale (1 / 2)
+
+        toA =
+            Vec3.add center (vec3 0 0.6 0)
+
+        toB =
+            Vec3.add center (vec3 0 -0.6 0)
+    in
+    ( { blockA
+        | positionAnimation = Motion.positionAnimation clock 500 (Tuple.first blockA.geo) toA
+        , rotateAnimation = Motion.rotateAnimation clock 500 (Tuple.second blockA.geo).radian 0
+      }
+    , { blockB
+        | positionAnimation = Motion.positionAnimation clock 500 (Tuple.first blockB.geo) toB
+        , rotateAnimation = Motion.rotateAnimation clock 500 (Tuple.second blockB.geo).radian 0
+      }
+    )
 
 
 createPair : GeoBlock -> GeoBlock -> Maybe OkadaPair
@@ -429,7 +445,7 @@ getClickedBlock model pos =
                         block.geo
 
                     mat =
-                        Mat4.mul (Mat4.makeTranslate p) r
+                        Mat4.mul (Mat4.makeTranslate p) (Mat4.makeRotate r.radian r.axis)
 
                     triangles =
                         List.map (\( v0, v1, v2 ) -> ( Mat4.transform mat v0, Mat4.transform mat v1, Mat4.transform mat v2 )) (List.concat Asset.cube)
@@ -593,11 +609,15 @@ entities camera perspective set list =
 
 entity : Shader.OrbitCamela -> Mat4 -> MeshSet -> GeoBlock -> WebGL.Entity
 entity camera perspective set block =
+    let
+        ( p, r ) =
+            block.geo
+    in
     WebGL.entity
         Shader.vertexShader
         Shader.fragmentShader
         (toMesh set block)
-        (Shader.uniforms camera perspective block.geo)
+        (Shader.uniforms camera perspective p (Mat4.mul (Shader.rotationToMat r) (Shader.rotationToMat block.turning)))
 
 
 toMesh : MeshSet -> GeoBlock -> Mesh Shader.Vertex

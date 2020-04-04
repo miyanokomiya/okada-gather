@@ -1,6 +1,7 @@
 module Shader exposing
     ( Geo
     , OrbitCamela
+    , Rotation
     , Triangle
     , Vertex
     , fragmentShader
@@ -8,6 +9,7 @@ module Shader exposing
     , isCubeClicked
     , nearestClickedMesh
     , orbitCamelaPosition
+    , rotationToMat
     , uniforms
     , vertexShader
     )
@@ -29,7 +31,14 @@ type alias Vertex =
 
 
 type alias Rotation =
-    Mat4
+    { radian : Float
+    , axis : Vec3
+    }
+
+
+rotationToMat : Rotation -> Mat4
+rotationToMat r =
+    Mat4.makeRotate r.radian r.axis
 
 
 type alias Geo =
@@ -51,8 +60,8 @@ type alias Uniforms =
     }
 
 
-uniforms : OrbitCamela -> Mat4 -> Geo -> Uniforms
-uniforms camera perspective ( position, rotation ) =
+uniforms : OrbitCamela -> Mat4 -> Vec3 -> Mat4 -> Uniforms
+uniforms camera perspective position rotation =
     { rotation = rotation
     , translation = Mat4.makeTranslate position
     , perspective = perspective
