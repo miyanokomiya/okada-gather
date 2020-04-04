@@ -12758,6 +12758,80 @@ var $mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$onWithOptions = F3(
 				$mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$eventDecoder));
 	});
 var $mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$onClick = A2($mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$onWithOptions, 'click', $mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$defaultOptions);
+var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$defaultOptions = {aH: true, aL: false};
+var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$Event = F4(
+	function (keys, changedTouches, targetTouches, touches) {
+		return {bx: changedTouches, bP: keys, co: targetTouches, cs: touches};
+	});
+var $elm$json$Json$Decode$map4 = _Json_map4;
+var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$Touch = F4(
+	function (identifier, clientPos, pagePos, screenPos) {
+		return {by: clientPos, bL: identifier, cf: pagePos, cl: screenPos};
+	});
+var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchDecoder = A5(
+	$elm$json$Json$Decode$map4,
+	$mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$Touch,
+	A2($elm$json$Json$Decode$field, 'identifier', $elm$json$Json$Decode$int),
+	$mpizenberg$elm_pointer_events$Internal$Decode$clientPos,
+	$mpizenberg$elm_pointer_events$Internal$Decode$pagePos,
+	$mpizenberg$elm_pointer_events$Internal$Decode$screenPos);
+var $mpizenberg$elm_pointer_events$Internal$Decode$all = A2(
+	$elm$core$List$foldr,
+	$elm$json$Json$Decode$map2($elm$core$List$cons),
+	$elm$json$Json$Decode$succeed(_List_Nil));
+var $mpizenberg$elm_pointer_events$Internal$Decode$dynamicListOf = function (itemDecoder) {
+	var decodeOne = function (n) {
+		return A2(
+			$elm$json$Json$Decode$field,
+			$elm$core$String$fromInt(n),
+			itemDecoder);
+	};
+	var decodeN = function (n) {
+		return $mpizenberg$elm_pointer_events$Internal$Decode$all(
+			A2(
+				$elm$core$List$map,
+				decodeOne,
+				A2($elm$core$List$range, 0, n - 1)));
+	};
+	return A2(
+		$elm$json$Json$Decode$andThen,
+		decodeN,
+		A2($elm$json$Json$Decode$field, 'length', $elm$json$Json$Decode$int));
+};
+var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchListDecoder = $mpizenberg$elm_pointer_events$Internal$Decode$dynamicListOf;
+var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$eventDecoder = A5(
+	$elm$json$Json$Decode$map4,
+	$mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$Event,
+	$mpizenberg$elm_pointer_events$Internal$Decode$keys,
+	A2(
+		$elm$json$Json$Decode$field,
+		'changedTouches',
+		$mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchListDecoder($mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchDecoder)),
+	A2(
+		$elm$json$Json$Decode$field,
+		'targetTouches',
+		$mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchListDecoder($mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchDecoder)),
+	A2(
+		$elm$json$Json$Decode$field,
+		'touches',
+		$mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchListDecoder($mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchDecoder)));
+var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$onWithOptions = F3(
+	function (event, options, tag) {
+		return A2(
+			$elm$html$Html$Events$custom,
+			event,
+			A2(
+				$elm$json$Json$Decode$map,
+				function (ev) {
+					return {
+						D: tag(ev),
+						aH: options.aH,
+						aL: options.aL
+					};
+				},
+				$mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$eventDecoder));
+	});
+var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$onEnd = A2($mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$onWithOptions, 'touchend', $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$defaultOptions);
 var $elm$html$Html$Attributes$rel = _VirtualDom_attribute('rel');
 var $elm$html$Html$span = _VirtualDom_node('span');
 var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
@@ -13030,80 +13104,17 @@ var $elm_explorations$webgl$WebGL$toHtml = $elm_explorations$webgl$WebGL$toHtmlW
 			$elm_explorations$webgl$WebGL$antialias,
 			$elm_explorations$webgl$WebGL$depth(1)
 		]));
-var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$defaultOptions = {aH: true, aL: false};
-var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$Event = F4(
-	function (keys, changedTouches, targetTouches, touches) {
-		return {bx: changedTouches, bP: keys, co: targetTouches, cs: touches};
-	});
-var $elm$json$Json$Decode$map4 = _Json_map4;
-var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$Touch = F4(
-	function (identifier, clientPos, pagePos, screenPos) {
-		return {by: clientPos, bL: identifier, cf: pagePos, cl: screenPos};
-	});
-var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchDecoder = A5(
-	$elm$json$Json$Decode$map4,
-	$mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$Touch,
-	A2($elm$json$Json$Decode$field, 'identifier', $elm$json$Json$Decode$int),
-	$mpizenberg$elm_pointer_events$Internal$Decode$clientPos,
-	$mpizenberg$elm_pointer_events$Internal$Decode$pagePos,
-	$mpizenberg$elm_pointer_events$Internal$Decode$screenPos);
-var $mpizenberg$elm_pointer_events$Internal$Decode$all = A2(
-	$elm$core$List$foldr,
-	$elm$json$Json$Decode$map2($elm$core$List$cons),
-	$elm$json$Json$Decode$succeed(_List_Nil));
-var $mpizenberg$elm_pointer_events$Internal$Decode$dynamicListOf = function (itemDecoder) {
-	var decodeOne = function (n) {
-		return A2(
-			$elm$json$Json$Decode$field,
-			$elm$core$String$fromInt(n),
-			itemDecoder);
-	};
-	var decodeN = function (n) {
-		return $mpizenberg$elm_pointer_events$Internal$Decode$all(
-			A2(
-				$elm$core$List$map,
-				decodeOne,
-				A2($elm$core$List$range, 0, n - 1)));
-	};
+var $author$project$Main$touchCoordinates = function (touchEvent) {
 	return A2(
-		$elm$json$Json$Decode$andThen,
-		decodeN,
-		A2($elm$json$Json$Decode$field, 'length', $elm$json$Json$Decode$int));
+		$elm$core$Maybe$withDefault,
+		_Utils_Tuple2(0, 0),
+		A2(
+			$elm$core$Maybe$map,
+			function ($) {
+				return $.by;
+			},
+			$elm$core$List$head(touchEvent.bx)));
 };
-var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchListDecoder = $mpizenberg$elm_pointer_events$Internal$Decode$dynamicListOf;
-var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$eventDecoder = A5(
-	$elm$json$Json$Decode$map4,
-	$mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$Event,
-	$mpizenberg$elm_pointer_events$Internal$Decode$keys,
-	A2(
-		$elm$json$Json$Decode$field,
-		'changedTouches',
-		$mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchListDecoder($mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchDecoder)),
-	A2(
-		$elm$json$Json$Decode$field,
-		'targetTouches',
-		$mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchListDecoder($mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchDecoder)),
-	A2(
-		$elm$json$Json$Decode$field,
-		'touches',
-		$mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchListDecoder($mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$touchDecoder)));
-var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$onWithOptions = F3(
-	function (event, options, tag) {
-		return A2(
-			$elm$html$Html$Events$custom,
-			event,
-			A2(
-				$elm$json$Json$Decode$map,
-				function (ev) {
-					return {
-						D: tag(ev),
-						aH: options.aH,
-						aL: options.aL
-					};
-				},
-				$mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$eventDecoder));
-	});
-var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$onEnd = A2($mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$onWithOptions, 'touchend', $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$defaultOptions);
 var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$onMove = A2($mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$onWithOptions, 'touchmove', $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$defaultOptions);
 var $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$onStart = A2($mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$onWithOptions, 'touchstart', $mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$defaultOptions);
 var $elm$core$Basics$round = _Basics_round;
@@ -13229,7 +13240,9 @@ var $author$project$Main$view = function (model) {
 												function ($) {
 													return $.b6;
 												},
-												$author$project$Main$ClickMsg))
+												$author$project$Main$ClickMsg)),
+											$mpizenberg$elm_pointer_events$Html$Events$Extra$Touch$onEnd(
+											A2($elm$core$Basics$composeL, $author$project$Main$ClickMsg, $author$project$Main$touchCoordinates))
 										]),
 									A2($zaboco$elm_draggable$Draggable$touchTriggers, 'my-element', $author$project$Main$DragMsg)),
 								_Utils_ap(
