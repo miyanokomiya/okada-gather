@@ -410,16 +410,15 @@ makePairAnimation clock ( blockA, blockB ) =
 
         toB =
             Vec3.add center (vec3 0 -0.6 0)
+
+        map =
+            \( b, to ) ->
+                { b
+                    | positionAnimation = Motion.positionAnimation clock 500 (Tuple.first b.geo) to
+                    , rotateAnimation = Motion.rotateAnimation clock 500 (Tuple.second b.geo).radian (pi * 4)
+                }
     in
-    ( { blockA
-        | positionAnimation = Motion.positionAnimation clock 500 (Tuple.first blockA.geo) toA
-        , rotateAnimation = Motion.rotateAnimation clock 500 (Tuple.second blockA.geo).radian 0
-      }
-    , { blockB
-        | positionAnimation = Motion.positionAnimation clock 500 (Tuple.first blockB.geo) toB
-        , rotateAnimation = Motion.rotateAnimation clock 500 (Tuple.second blockB.geo).radian 0
-      }
-    )
+    Tuple.mapBoth map map ( ( blockA, toA ), ( blockB, toB ) )
 
 
 createPair : GeoBlock -> GeoBlock -> Maybe OkadaPair
