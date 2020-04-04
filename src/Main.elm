@@ -586,6 +586,17 @@ view model =
                                ]
                         )
                     ]
+                , Html.div
+                    [ style "text-align" "center"
+                    ]
+                    [ Html.a
+                        [ Html.Attributes.href "https://github.com/miyanokomiya/okada-gather"
+                        , Html.Attributes.target "_blank"
+                        , Html.Attributes.rel "noopener"
+                        , style "font-size" "0.8rem"
+                        ]
+                        [ Html.text "repository" ]
+                    ]
                 ]
             ]
         ]
