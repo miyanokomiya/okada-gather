@@ -15,7 +15,7 @@ jobs:
         uses: justgook/setup-elm@v1
 
       - name: Make
-        run: elm make --optimize src/Main.elm
+        run: elm make --optimize --output=elm.js src/Main.elm
 
       - name: Move files
         run: |

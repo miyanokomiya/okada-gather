@@ -497,7 +497,7 @@ view model =
             , style "justify-content" "center"
             ]
             [ Html.div
-                [ width w
+                [ style "width" (String.fromInt w ++ "px")
                 ]
                 [ Html.div
                     [ style "display" "flex"
