@@ -42,7 +42,9 @@ rotationToMat r =
 
 
 type alias Geo =
-    ( Vec3, Rotation )
+    { position : Vec3
+    , rotation : Rotation
+    }
 
 
 {-| (radius, radianA, radianB)

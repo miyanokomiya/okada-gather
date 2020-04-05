@@ -49,8 +49,11 @@ type alias ColorPair =
 blockTransFormMat : GeoBlock -> Mat4
 blockTransFormMat block =
     let
-        ( p, r ) =
-            block.geo
+        p =
+            block.geo.position
+
+        r =
+            block.geo.rotation
     in
     Mat4.mul (Mat4.makeTranslate p) (Mat4.mul (Shader.rotationToMat r) (Shader.rotationToMat block.turning))
 
@@ -113,11 +116,11 @@ type alias Model =
 spreadBlock : Float -> GeoBlock -> Random.Generator GeoBlock
 spreadBlock radius block =
     Random.map
-        (\( p, r ) ->
+        (\geo ->
             { block
-                | positionAnimation = Motion.positionAnimation 0 200 (Tuple.first block.geo) p
-                , rotateAnimation = Motion.staticRotateAnimation r.radian
-                , geo = ( Tuple.first block.geo, r )
+                | positionAnimation = Motion.positionAnimation 0 200 block.geo.position geo.position
+                , rotateAnimation = Motion.staticRotateAnimation geo.rotation.radian
+                , geo = { position = block.geo.position, rotation = geo.rotation }
             }
         )
         (randomGeo radius)
@@ -126,7 +129,7 @@ spreadBlock radius block =
 randomGeo : Float -> Random.Generator Shader.Geo
 randomGeo radius =
     Random.map3
-        (\rad axis pos -> ( pos, { radian = rad, axis = axis } ))
+        (\rad axis pos -> { position = pos, rotation = { radian = rad, axis = axis } })
         (Random.float 0 (2 * pi))
         (randomVec3 1)
         (randomVec3 radius)
@@ -213,7 +216,7 @@ initModel level =
                                 Da
 
                         geo =
-                            ( vec3 0 0 0, { radian = 0, axis = vec3 1 0 0 } )
+                            { position = vec3 0 0 0, rotation = { radian = 0, axis = vec3 1 0 0 } }
                     in
                     { id = i
                     , okada = okada
@@ -400,10 +403,10 @@ makePairAnimation : Animation.Clock -> OkadaPair -> OkadaPair
 makePairAnimation clock ( blockA, blockB ) =
     let
         posA =
-            Tuple.first blockA.geo
+            blockA.geo.position
 
         posB =
-            Tuple.first blockB.geo
+            blockB.geo.position
 
         center =
             Vec3.add posA posB |> Vec3.scale (1 / 2)
@@ -417,8 +420,8 @@ makePairAnimation clock ( blockA, blockB ) =
         map =
             \( b, to ) ->
                 { b
-                    | positionAnimation = Motion.positionAnimation clock 500 (Tuple.first b.geo) to
-                    , rotateAnimation = Motion.rotateAnimation clock 500 (Tuple.second b.geo).radian (pi * 4)
+                    | positionAnimation = Motion.positionAnimation clock 500 b.geo.position to
+                    , rotateAnimation = Motion.rotateAnimation clock 500 b.geo.rotation.radian (pi * 4)
                 }
     in
     Tuple.mapBoth map map ( ( blockA, toA ), ( blockB, toB ) )
@@ -643,8 +646,11 @@ entities camera perspective set list =
 entity : Shader.OrbitCamela -> Mat4 -> MeshSet -> GeoBlock -> WebGL.Entity
 entity camera perspective set block =
     let
-        ( p, r ) =
-            block.geo
+        p =
+            block.geo.position
+
+        r =
+            block.geo.rotation
     in
     WebGL.entity
         Shader.vertexShader

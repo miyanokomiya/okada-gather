@@ -12,8 +12,6 @@ module Motion exposing
     )
 
 import Animation exposing (Animation)
-import Block
-import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 import Shader
 
@@ -46,14 +44,13 @@ staticRotateAnimation current =
 animateRotate : Float -> Animation -> Shader.Geo -> Shader.Geo
 animateRotate t animation geo =
     let
-        ( pos, rotation ) =
-            geo
+        rotation =
+            geo.rotation
 
         next =
             Animation.animate t animation
     in
-    -- ( pos, rotation)
-    ( pos, { rotation | radian = next } )
+    { geo | rotation = { rotation | radian = next } }
 
 
 type alias PositionAnimation =
@@ -95,13 +92,10 @@ staticPositionAnimation vec =
 animatePosition : Float -> PositionAnimation -> Shader.Geo -> Shader.Geo
 animatePosition t animation geo =
     let
-        ( _, rotation ) =
-            geo
-
         next =
             vec3 (Animation.animate t animation.x) (Animation.animate t animation.y) (Animation.animate t animation.z)
     in
-    ( next, rotation )
+    { geo | position = next }
 
 
 animateGeo : Float -> GeoAnimation -> Shader.Geo -> Shader.Geo
