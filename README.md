@@ -2,14 +2,14 @@
 
 https://miyanokomiya.github.io/okada-gather/
 
-## Project setup
-```
-elm make src/Main.elm
-```
-
 ### Dev
 ```
 elm reactor
+```
+
+## Build
+```
+elm make --output=elm.js src/Main.elm
 ```
 
 ### Publish

@@ -463,7 +463,7 @@ getClickedBlock model pos =
                 in
                 ( triangles, block )
             )
-        |> Shader.nearestClickedMesh origin direction
+        |> Shader.getClickedMesh origin direction
 
 
 isLevelCompleted : Model -> Bool

@@ -1,16 +1,9 @@
 module Block exposing (mesh, meshDa, meshOka)
 
-import Array
 import Asset
-import Math.Matrix4 as Mat4
-import Math.Vector3 as Vec3 exposing (Vec3, add, vec3)
+import Math.Vector3 as Vec3 exposing (Vec3)
 import Shader
 import WebGL exposing (Mesh)
-
-
-
--- |> Mat4.transform (Mat4.rotate radian axis Mat4.identity)
--- |> add position
 
 
 mesh : List ( Shader.Triangle, Vec3 ) -> Mesh Shader.Vertex
@@ -49,7 +42,7 @@ meshDa faceColor sideColor =
         |> mesh
 
 
-face : Vec3 -> ( Vec3, Vec3, Vec3 ) -> List ( Shader.Vertex, Shader.Vertex, Shader.Vertex )
+face : Vec3 -> Shader.Triangle -> List ( Shader.Vertex, Shader.Vertex, Shader.Vertex )
 face color ( a, b, c ) =
     let
         vertex position =

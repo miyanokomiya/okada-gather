@@ -6,8 +6,8 @@ module Shader exposing
     , Vertex
     , fragmentShader
     , getClickPosition
-    , isCubeClicked
-    , nearestClickedMesh
+    , isMeshClicked
+    , getClickedMesh
     , orbitCamelaPosition
     , rotationToMat
     , uniforms
@@ -36,18 +36,20 @@ type alias Rotation =
     }
 
 
-rotationToMat : Rotation -> Mat4
-rotationToMat r =
-    Mat4.makeRotate r.radian r.axis
-
-
 type alias Geo =
     { position : Vec3
     , rotation : Rotation
     }
 
 
-{-| (radius, radianA, radianB)
+{-| state of OrbitCamela
+
+Parameters:
+
+  - radius - radius from origin
+  - radianY - radian by axis Y
+  - radianZ - radian by axis Z
+
 -}
 type alias OrbitCamela =
     ( Float, Float, Float )
@@ -60,6 +62,11 @@ type alias Uniforms =
     , camera : Mat4
     , shade : Float
     }
+
+
+rotationToMat : Rotation -> Mat4
+rotationToMat r =
+    Mat4.makeRotate r.radian r.axis
 
 
 uniforms : OrbitCamela -> Mat4 -> Vec3 -> Mat4 -> Uniforms
@@ -124,8 +131,8 @@ fragmentShader =
     |]
 
 
-isCubeClicked : Vec3 -> Vec3 -> List Triangle -> Bool
-isCubeClicked origin direction list =
+isMeshClicked : Vec3 -> Vec3 -> List Triangle -> Bool
+isMeshClicked origin direction list =
     let
         intersect =
             rayTriangleIntersect origin direction
@@ -145,17 +152,17 @@ isCubeClicked origin direction list =
         list
 
 
-nearestClickedMesh : Vec3 -> Vec3 -> List ( List Triangle, a ) -> Maybe a
-nearestClickedMesh origin direction list =
+getClickedMesh : Vec3 -> Vec3 -> List ( List Triangle, a ) -> Maybe a
+getClickedMesh origin direction list =
     list
-        |> clickedMeshList origin direction
+        |> getClickedMeshList origin direction
         |> sortByScaler origin
         |> List.map (\( _, triangles ) -> triangles)
         |> List.head
 
 
-clickedMeshList : Vec3 -> Vec3 -> List ( List Triangle, a ) -> List ( Vec3, a )
-clickedMeshList origin direction list =
+getClickedMeshList : Vec3 -> Vec3 -> List ( List Triangle, a ) -> List ( Vec3, a )
+getClickedMeshList origin direction list =
     let
         intersect =
             rayTriangleIntersect origin direction
